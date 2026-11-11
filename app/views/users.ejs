@@ -1,0 +1,30 @@
+<% pageTitle = 'Users' %>
+<%- include('partials/header') %>
+<h1>User management</h1>
+<% if (msg) { %><p class="note ok"><%= msg %></p><% } %>
+<% if (error) { %><p class="note err"><%= error %></p><% } %>
+
+<h2>Add a sub-user</h2>
+<p class="muted">Sub-users can view and add listings only. They must change their password on first login.</p>
+<form method="post" action="/admin/users" class="row" style="max-width:620px;align-items:flex-end">
+  <input type="hidden" name="csrf" value="<%= csrf %>">
+  <label>Email<input type="email" name="email" required></label>
+  <label>Temporary password<input type="text" name="temp" required></label>
+  <button class="btn" type="submit">Add sub-user</button>
+</form>
+
+<h2>All users</h2>
+<table>
+  <tr><th>Email</th><th>Role</th><th>Status</th><th></th></tr>
+  <% users.forEach(u => { %>
+    <tr>
+      <td><%= u.email %></td>
+      <td><%= u.role %></td>
+      <td><%= u.must_change_password ? 'Pending first login' : 'Active' %></td>
+      <td><% if (u.role === 'sub') { %>
+        <a class="btn sm danger" href="/admin/users/<%= u.id %>/delete?csrf=<%= csrf %>" onclick="return confirm('Delete this sub-user?')">Delete</a>
+      <% } %></td>
+    </tr>
+  <% }) %>
+</table>
+<%- include('partials/footer') %>

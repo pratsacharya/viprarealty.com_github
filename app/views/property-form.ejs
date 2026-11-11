@@ -1,0 +1,55 @@
+<% pageTitle = (isEdit ? 'Edit' : 'Add') + ' property' %>
+<% const v = (k) => (p[k] === null || p[k] === undefined) ? '' : p[k]; %>
+<%- include('partials/header') %>
+<h1><%= isEdit ? 'Edit' : 'Add' %> property</h1>
+<% if (error) { %><p class="note err"><%= error %></p><% } %>
+<form method="post" action="/admin/property-edit<%= isEdit ? ('?id=' + p.id) : '' %>" enctype="multipart/form-data" style="max-width:760px">
+  <input type="hidden" name="csrf" value="<%= csrf %>">
+  <div class="row">
+    <label>Search type<select name="search_type">
+      <% ['Rent','Buy'].forEach(o => { %><option <%= v('search_type')===o?'selected':'' %>><%= o %></option><% }) %></select></label>
+    <label>Listing type (Buy)<select name="listing_type"><option value="">—</option>
+      <% ['Resale','Under Construction'].forEach(o => { %><option <%= v('listing_type')===o?'selected':'' %>><%= o %></option><% }) %></select></label>
+    <label>Status<select name="status">
+      <% Object.entries({active:'Active',inactive:'Inactive',sold_out:'Sold out',rented_out:'Rented out'}).forEach(([k,lbl]) => { %>
+        <option value="<%= k %>" <%= v('status')===k?'selected':'' %>><%= lbl %></option><% }) %></select></label>
+  </div>
+  <div class="row">
+    <label>Category<select name="category_id"><option value="">—</option>
+      <% cats.forEach(c => { %><option value="<%= c.id %>" <%= String(v('category_id'))===String(c.id)?'selected':'' %>><%= c.name %></option><% }) %></select></label>
+    <label>Sub-category<select name="sub_category_id"><option value="">—</option>
+      <% subs.forEach(s => { %><option value="<%= s.id %>" <%= String(v('sub_category_id'))===String(s.id)?'selected':'' %>><%= s.name %></option><% }) %></select></label>
+    <label>City<select name="city"><option value="">—</option>
+      <% cities.forEach(c => { %><option <%= v('city')===c?'selected':'' %>><%= c %></option><% }) %></select></label>
+    <label>Locality / area<input name="locality" value="<%= v('locality') %>"></label>
+  </div>
+  <div class="row">
+    <label>Builder name<input name="builder_name" value="<%= v('builder_name') %>"></label>
+    <label>Project title<input name="project_title" value="<%= v('project_title') %>"></label>
+    <label>Building name<input name="building_name" value="<%= v('building_name') %>"></label>
+  </div>
+  <label>Description<textarea name="description"><%= v('description') %></textarea></label>
+  <div class="row">
+    <label>Sale price (₹)<input name="sale_price" value="<%= v('sale_price') %>"></label>
+    <label>Monthly rent (₹)<input name="monthly_rent" value="<%= v('monthly_rent') %>"></label>
+    <label>Deposit (₹)<input name="deposit_amount" value="<%= v('deposit_amount') %>"></label>
+    <label>Down payment (₹)<input name="down_payment" value="<%= v('down_payment') %>"></label>
+  </div>
+  <div class="row">
+    <label>Possession date<input name="possession_date" value="<%= v('possession_date') %>" placeholder="DD-MM-YYYY or Immediate"></label>
+    <label>Bedrooms<input name="bedrooms" value="<%= v('bedrooms') %>"></label>
+    <label>Bathrooms<input name="bathrooms" value="<%= v('bathrooms') %>"></label>
+    <label>Carpet area (sq ft)<input name="carpet_area" value="<%= v('carpet_area') %>"></label>
+  </div>
+  <div class="row">
+    <label>Built-up / plot (sq ft)<input name="builtup_area" value="<%= v('builtup_area') %>"></label>
+    <label>Total floors<input name="total_floors" value="<%= v('total_floors') %>"></label>
+    <label>Floor no<input name="floor_no" value="<%= v('floor_no') %>"></label>
+    <label>Ceiling height (ft)<input name="ceiling_height" value="<%= v('ceiling_height') %>"></label>
+  </div>
+  <label style="display:flex;align-items:center;gap:8px;margin-top:14px"><input type="checkbox" name="featured" style="width:auto" <%= v('featured')?'checked':'' %>> Feature on Home page</label>
+  <label>Images (JPG/PNG/WebP, up to 20 total)<input type="file" name="images" accept="image/*" multiple></label>
+  <% if (imgCount) { %><p class="muted" style="margin-top:10px"><%= imgCount %> image(s) already uploaded.</p><% } %>
+  <button class="btn" type="submit" style="margin-top:18px"><%= isEdit ? 'Save changes' : 'Add property' %></button>
+</form>
+<%- include('partials/footer') %>

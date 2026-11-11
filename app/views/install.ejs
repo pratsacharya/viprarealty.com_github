@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Install — <%= SITE_NAME %></title>
+<link rel="stylesheet" href="/public/admin.css">
+</head>
+<body class="auth">
+<div class="auth-card">
+  <h1>First-time setup</h1>
+  <% if (hasMaster) { %>
+    <p class="note err">A master account already exists. You can remove the <code>/admin/install</code> route now.</p>
+    <a class="btn" href="/admin/login">Go to login</a>
+  <% } else if (done) { %>
+    <p class="note ok">Master account created. Log in, then remove the install route.</p>
+    <a class="btn" href="/admin/login">Go to login</a>
+  <% } else { %>
+    <p class="muted">Create the master (owner) account.</p>
+    <% if (error) { %><p class="note err"><%= error %></p><% } %>
+    <form method="post" action="/admin/install">
+      <label>Email<input type="email" name="email" value="<%= MASTER_EMAIL %>" required></label>
+      <label>Password (min 8 chars)<input type="password" name="password" required></label>
+      <button class="btn" type="submit">Create master account</button>
+    </form>
+  <% } %>
+</div>
+</body>
+</html>

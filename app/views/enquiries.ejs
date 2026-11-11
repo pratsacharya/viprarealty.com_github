@@ -1,0 +1,17 @@
+<% pageTitle = 'Enquiries' %>
+<%- include('partials/header') %>
+<h1>Enquiries</h1>
+<table>
+  <tr><th>Date</th><th>Name</th><th>Mobile</th><th>Property</th><th>Requirement</th></tr>
+  <% if (!rows.length) { %><tr><td class="muted" colspan="5">No verified enquiries yet.</td></tr><% } %>
+  <% rows.forEach(r => { const digits = String(r.mobile).replace(/[^0-9]/g,''); %>
+    <tr>
+      <td><%= new Date(r.created_at).toLocaleString('en-IN') %></td>
+      <td><%= r.name %></td>
+      <td><a href="https://wa.me/91<%= digits %>"><%= r.mobile %></a></td>
+      <td><%= ((r.project_title||'')+' '+(r.building_name||'')).trim() || '—' %></td>
+      <td><%= r.requirement %></td>
+    </tr>
+  <% }) %>
+</table>
+<%- include('partials/footer') %>

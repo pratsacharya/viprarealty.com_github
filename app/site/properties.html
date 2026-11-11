@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vipra Realty — Properties</title>
+<meta name="description" content="Vipra Realty — rent and buy residential and commercial property in Bangalore, Mumbai, Navi Mumbai and Thane.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; font-family: 'Inter', system-ui, sans-serif; color: #151922; background: #fff; }
+  * { box-sizing: border-box; }
+  a { text-decoration: none; color: inherit; }
+  h1, h2, h3 { font-family: 'Poppins', 'Inter', sans-serif; margin: 0; }
+  .nav-link:hover { color: #6B4BC9; }
+  .card:hover { box-shadow: 0 12px 28px rgba(21,25,34,0.10); transform: translateY(-2px); }
+  .card { transition: box-shadow .2s ease, transform .2s ease; }
+  .chip-active { background: #6B4BC9; color: #fff; border-color: #6B4BC9; }
+</style>
+</head>
+<body>
+<div style="width: 100%; max-width: 100%; overflow-x: hidden;">
+
+  <!-- Header -->
+  <header style="position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,0.92); backdrop-filter: blur(8px); border-bottom: 1px solid #ECEEF2;">
+    <div style="max-width: 1200px; margin: 0 auto; padding: 16px 40px; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap;">
+      <a href="index.html" aria-label="Vipra Realty home"><img src="assets/logo.png" alt="Vipra Realty" style="height: 34px; display: block;"></a>
+      <nav aria-label="Primary" style="display: flex; align-items: center; gap: 34px; font-size: 15px; font-weight: 500;">
+        <a class="nav-link" href="index.html" style="color: #151922;">Home</a>
+        <a class="nav-link" href="properties.html" style="color: #6B4BC9;">Properties</a>
+        <a class="nav-link" href="contact.html" style="color: #151922;">Contact Us</a>
+      </nav>
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <a href="tel:+919108598918" style="font-weight: 600; font-size: 15px; color: #151922;">+91 91085 98918</a>
+        <a href="https://wa.me/919108598918" style="display: inline-flex; align-items: center; gap: 8px; background: #22B573; color: #fff; padding: 11px 18px; border-radius: 10px; font-weight: 600; font-size: 14px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 00-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1012 2zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1-1.4-1-2.6 0-1.2.6-1.8.9-2.1.2-.2.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.6c-.2.2-.3.4-.1.7.2.3.9 1.4 1.9 2.3 1.3 1.1 2.3 1.5 2.6 1.6.2.1.4.1.6-.1l.7-.9c.2-.2.4-.2.6-.1l1.9.9c.2.1.4.2.5.3.1.3.1.9-.1 1.4z"/></svg>
+          WhatsApp
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Page heading -->
+  <div style="background: #F6F7FA; border-bottom: 1px solid #ECEEF2;">
+    <div style="max-width: 1200px; margin: 0 auto; padding: 40px 40px 34px;">
+      <nav aria-label="Breadcrumb" style="font-size: 13px; color: #8A93A1; margin-bottom: 12px;"><a href="index.html" style="color: #8A93A1;">Home</a> &nbsp;/&nbsp; <span style="color: #5A6472;">Properties</span></nav>
+      <h1 style="font-size: 34px; font-weight: 700; color: #151922;">Available properties</h1>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px;">
+        <button class="chip-active" data-chip="" style="font-family: inherit; cursor: pointer; font-size: 14px; font-weight: 600; padding: 9px 18px; border-radius: 999px; border: 1px solid #DFE3EA; background: #6B4BC9; color: #fff;">All</button>
+        <button style="font-family: inherit; cursor: pointer; font-size: 14px; font-weight: 600; padding: 9px 18px; border-radius: 999px; border: 1px solid #DFE3EA; background: #fff; color: #43506A;" data-chip="Rent">Rent</button>
+        <button style="font-family: inherit; cursor: pointer; font-size: 14px; font-weight: 600; padding: 9px 18px; border-radius: 999px; border: 1px solid #DFE3EA; background: #fff; color: #43506A;" data-chip="Buy">Buy</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Body: filters + grid -->
+  <div style="max-width: 1200px; margin: 0 auto; padding: 36px 40px 72px; display: flex; gap: 36px; flex-wrap: wrap; align-items: flex-start;">
+
+    <!-- Filter sidebar -->
+    <aside style="flex: 1 1 250px; min-width: 0; border: 1px solid #ECEEF2; border-radius: 16px; padding: 24px; background: #fff;">
+      <h2 style="font-size: 16px; font-weight: 700; color: #151922; margin-bottom: 20px;">Filters</h2>
+
+      <div style="margin-bottom: 22px;">
+        <label style="display: block; font-size: 12px; font-weight: 700; color: #8A93A1; letter-spacing: .04em; margin-bottom: 8px;">SEARCH</label>
+        <input type="text" id="f-q" placeholder="Type your requirement…" style="width: 100%; padding: 11px 12px; border: 1px solid #DFE3EA; border-radius: 10px; font-size: 14px; color: #151922; font-family: inherit;">
+      </div>
+
+      <div style="margin-bottom: 22px;">
+        <label style="display: block; font-size: 12px; font-weight: 700; color: #8A93A1; letter-spacing: .04em; margin-bottom: 8px;">CITY</label>
+        <select style="width: 100%; padding: 11px 12px; border: 1px solid #DFE3EA; border-radius: 10px; font-size: 14px; color: #151922; background: #fff; font-family: inherit;" id="f-city"><option>All cities</option><option>Bangalore</option><option>Mumbai</option><option>Navi Mumbai</option><option>Thane</option></select>
+      </div>
+
+      <div style="margin-bottom: 22px; display: flex; gap: 12px;">
+        <label style="flex: 1; min-width: 0;"><span style="display: block; font-size: 12px; font-weight: 700; color: #8A93A1; letter-spacing: .04em; margin-bottom: 8px;">LOOKING TO</span>
+          <select style="width: 100%; padding: 11px 12px; border: 1px solid #DFE3EA; border-radius: 10px; font-size: 14px; color: #151922; background: #fff; font-family: inherit;" id="f-type"><option>Rent</option><option>Buy</option></select>
+        </label>
+        <label style="flex: 1; min-width: 0;"><span style="display: block; font-size: 12px; font-weight: 700; color: #8A93A1; letter-spacing: .04em; margin-bottom: 8px;">LISTING (BUY)</span>
+          <select style="width: 100%; padding: 11px 12px; border: 1px solid #DFE3EA; border-radius: 10px; font-size: 14px; color: #151922; background: #fff; font-family: inherit;" id="f-listing"><option>Any</option><option>Resale</option><option>Under Construction</option></select>
+        </label>
+      </div>
+
+      <div style="margin-bottom: 22px;">
+        <label style="display: block; font-size: 12px; font-weight: 700; color: #8A93A1; letter-spacing: .04em; margin-bottom: 8px;">CATEGORY</label>
+        <select style="width: 100%; padding: 11px 12px; border: 1px solid #DFE3EA; border-radius: 10px; font-size: 14px; color: #151922; background: #fff; font-family: inherit;" id="f-cat"><option>All categories</option><option>Residential</option><option>Commercial</option></select>
+      </div>
+
+      <div style="margin-bottom: 22px;">
+        <label style="display: block; font-size: 12px; font-weight: 700; color: #8A93A1; letter-spacing: .04em; margin-bottom: 8px;">PROPERTY TYPE</label>
+        <select style="width: 100%; padding: 11px 12px; border: 1px solid #DFE3EA; border-radius: 10px; font-size: 14px; color: #151922; background: #fff; font-family: inherit;" id="f-sub"><option>Any type</option><option>Flats</option><option>Villas</option><option>Independent House</option><option>Independent Plots</option><option>Office Space</option><option>Retail Store</option><option>Warehouse</option><option>Land</option><option>Others</option></select>
+      </div>
+
+      <div style="margin-bottom: 22px;">
+        <label style="display: block; font-size: 12px; font-weight: 700; color: #8A93A1; letter-spacing: .04em; margin-bottom: 8px;">LOCATION</label>
+        <input type="text" placeholder="e.g. Sarjapur" style="width: 100%; padding: 11px 12px; border: 1px solid #DFE3EA; border-radius: 10px; font-size: 14px; color: #151922; font-family: inherit;">
+      </div>
+
+      <div style="margin-bottom: 24px;">
+        <label style="display: block; font-size: 12px; font-weight: 700; color: #8A93A1; letter-spacing: .04em; margin-bottom: 8px;">BUDGET</label>
+        <div style="display: flex; gap: 10px;">
+          <input type="text" placeholder="Min" style="width: 100%; padding: 11px 12px; border: 1px solid #DFE3EA; border-radius: 10px; font-size: 14px; color: #151922; font-family: inherit;">
+          <input type="text" placeholder="Max" style="width: 100%; padding: 11px 12px; border: 1px solid #DFE3EA; border-radius: 10px; font-size: 14px; color: #151922; font-family: inherit;">
+        </div>
+      </div>
+
+      <button style="width: 100%; font-family: inherit; cursor: pointer; background: #6B4BC9; color: #fff; padding: 12px; border: none; border-radius: 10px; font-weight: 600; font-size: 14px;" id="apply-filters">Apply filters</button>
+    </aside>
+
+    <!-- Results -->
+    <section style="flex: 999 1 620px; min-width: 0;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; flex-wrap: wrap; gap: 12px;">
+        <span style="font-size: 15px; color: #5A6472;"><strong id="results-count" style="color: #151922;">24</strong> properties available</span>
+        <label style="font-size: 14px; color: #5A6472; display: flex; align-items: center; gap: 8px;">Sort by
+          <select style="padding: 9px 12px; border: 1px solid #DFE3EA; border-radius: 9px; font-size: 14px; color: #151922; background: #fff; font-family: inherit;"><option>Newest</option><option>Price: low to high</option><option>Price: high to low</option></select>
+        </label>
+      </div>
+
+      <div id="results-grid" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px;"></div>
+
+      <!-- Pagination -->
+      <div style="display: flex; justify-content: center; gap: 8px; margin-top: 40px;">
+        <a href="#" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border: 1px solid #DFE3EA; border-radius: 10px; font-size: 14px; font-weight: 600; background: #6B4BC9; color: #fff;">1</a>
+        <a href="#" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border: 1px solid #DFE3EA; border-radius: 10px; font-size: 14px; font-weight: 600; color: #43506A;">2</a>
+        <a href="#" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border: 1px solid #DFE3EA; border-radius: 10px; font-size: 14px; font-weight: 600; color: #43506A;">3</a>
+        <a href="#" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border: 1px solid #DFE3EA; border-radius: 10px; font-size: 14px; font-weight: 600; color: #43506A;">→</a>
+      </div>
+    </section>
+  </div>
+
+  <!-- Footer -->
+  <footer style="background: #0F1319; color: #C3CAD6;">
+    <div style="max-width: 1200px; margin: 0 auto; padding: 48px 40px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 24px; align-items: center;">
+      <img src="assets/logo.png" alt="Vipra Realty" style="height: 30px; background: #fff; padding: 7px 11px; border-radius: 8px;">
+      <div style="font-size: 14px; color: #9BA4B2;">+91 91085 98918 &nbsp;·&nbsp; enquiry@viprarealty.com &nbsp;·&nbsp; Sarjapur Road, Bangalore</div>
+      <div style="font-size: 13px; color: #717B8A;">© 2026 Vipra Realty</div>
+    </div>
+  </footer>
+
+  <a href="https://wa.me/919108598918" aria-label="Chat on WhatsApp" style="position: fixed; right: 26px; bottom: 26px; z-index: 40; width: 58px; height: 58px; border-radius: 50%; background: #22B573; box-shadow: 0 10px 24px rgba(34,181,115,0.45); display: flex; align-items: center; justify-content: center;">
+    <svg width="30" height="30" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M12 2a10 10 0 00-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1012 2zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1-1.4-1-2.6 0-1.2.6-1.8.9-2.1.2-.2.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.6c-.2.2-.3.4-.1.7.2.3.9 1.4 1.9 2.3 1.3 1.1 2.3 1.5 2.6 1.6.2.1.4.1.6-.1l.7-.9c.2-.2.4-.2.6-.1l1.9.9c.2.1.4.2.5.3.1.3.1.9-.1 1.4z"/></svg>
+  </a>
+
+</div>
+<script src="js/site.js"></script>
+</body>
+</html>

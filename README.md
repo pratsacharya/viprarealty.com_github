@@ -32,7 +32,8 @@ Full Hostinger (Node.js app) deployment is in **`app/README-DEPLOY-NODE.md`**.
 - **Backend / admin panel** — functional v1: auth (master + sub-user roles), property CRUD with
   image upload, status management, CSV bulk import, enquiries, user management, and the enquiry/OTP
   + public-listings APIs.
-- **Public site** — design mockups in `design/`; not yet wired to the database. Next step is to
-  serve them from the app and have them fetch `/api/listings`, with the enquiry form posting to
-  `/api/enquiry` → `/api/verify-otp`.
+- **Public site** — live pages in `app/site/`, served by the app at the web root and wired to the
+  API: the Home and Properties grids fetch `/api/listings`, the detail page loads a listing by
+  `?id=`, and the Contact enquiry form posts to `/api/enquiry` → `/api/verify-otp`. `design/` keeps
+  the original static mockups for reference.
 - **OTP SMS** — needs an MSG91 (or Twilio) account + India DLT templates before it sends live.

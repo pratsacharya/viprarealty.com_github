@@ -91,9 +91,10 @@ and **Restart** on each deploy.
 ## Notes & next steps
 - **Sessions** use the default in-memory store, so an app restart logs admins out. Fine for v1; for
   persistence, add a MySQL/Redis session store later.
-- **Public website:** the `design/` pages aren't wired to the DB yet. When ready, serve them from the Node
-  app (a static route) or `public_html`, have the grid/detail fetch `/api/listings.php`→ here `/api/listings`,
-  and the enquiry form post to `/api/enquiry` then `/api/verify-otp`.
+- **Public website:** the pages in `site/` are served at the web root and wired to the API —
+  Home/Properties fetch `/api/listings`, the detail page reads `?id=`, and the Contact form runs the
+  enquiry → OTP flow (`/api/enquiry`, `/api/verify-otp`). Add listings in the admin and they appear
+  on the public site automatically. Image placeholders show until a listing has images.
 - **CSV import:** the admin reads CSV — open the Excel template and *Save As → CSV* first.
 - Verified: routes load, all EJS views compile, the server boots and serves `/admin/login`, and DB/route
   errors return HTTP 500 (JSON on `/api`) **without crashing** the process. Run a full click-through against

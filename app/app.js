@@ -29,9 +29,11 @@ app.use(session({
 // trust the Hostinger/Passenger proxy so secure cookies & protocol work
 app.set('trust proxy', 1);
 
-app.get('/', (req, res) => res.redirect('/admin/login'));
 app.use('/admin', require('./routes/admin'));
 app.use('/api', require('./routes/api'));
+
+// public website (static) served at the web root
+app.use(express.static(path.join(__dirname, 'site')));
 
 app.use((req, res) => res.status(404).send('Not found'));
 

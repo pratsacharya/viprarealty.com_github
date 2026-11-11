@@ -60,7 +60,7 @@ router.post('/install', async (req, res) => {
 
 // ---------- auth ----------
 router.get('/login', (req, res) => {
-  if (req.session.user) return res.redirect('/admin/dashboard');
+  if (req.session.user) return res.redirect('/adminvr/dashboard');
   res.render('login', { error: null, SITE_NAME: 'Vipra Realty' });
 });
 router.post('/login', async (req, res) => {
@@ -72,13 +72,13 @@ router.post('/login', async (req, res) => {
     req.session.regenerate((err) => {
       if (err) return res.status(500).send('Session error');
       req.session.user = { id: u.id, email: u.email, role: u.role, must_change_password: !!u.must_change_password };
-      res.redirect('/admin/dashboard');
+      res.redirect('/adminvr/dashboard');
     });
   } else {
     res.render('login', { error: 'Incorrect email or password.', SITE_NAME: 'Vipra Realty' });
   }
 });
-router.get('/logout', (req, res) => req.session.destroy(() => res.redirect('/admin/login')));
+router.get('/logout', (req, res) => req.session.destroy(() => res.redirect('/adminvr/login')));
 
 // everything below needs a login
 router.use(requireLogin);
@@ -112,18 +112,18 @@ router.get('/properties/:id/status', requireMaster, checkCsrf, async (req, res) 
   const allowed = ['active', 'inactive', 'sold_out', 'rented_out'];
   const s = allowed.includes(req.query.status) ? req.query.status : 'active';
   await pool.query('UPDATE properties SET status=? WHERE id=?', [s, +req.params.id]);
-  res.redirect('/admin/properties');
+  res.redirect('/adminvr/properties');
 });
 router.get('/properties/:id/feature', requireMaster, checkCsrf, async (req, res) => {
   await pool.query('UPDATE properties SET featured = 1 - featured WHERE id=?', [+req.params.id]);
-  res.redirect('/admin/properties');
+  res.redirect('/adminvr/properties');
 });
 router.get('/properties/:id/delete', requireMaster, checkCsrf, async (req, res) => {
   const id = +req.params.id;
   const [imgs] = await pool.query('SELECT file_path FROM property_images WHERE property_id=?', [id]);
   for (const r of imgs) { const f = path.join(__dirname, '..', r.file_path); if (fs.existsSync(f)) fs.unlinkSync(f); }
   await pool.query('DELETE FROM properties WHERE id=?', [id]);
-  res.redirect('/admin/properties');
+  res.redirect('/adminvr/properties');
 });
 
 // ---------- add / edit ----------
@@ -197,7 +197,7 @@ router.post('/property-edit', upload.array('images', 20), async (req, res) => {
       [pid, 'uploads/' + f.filename, have]);
     have++;
   }
-  res.redirect('/admin/properties');
+  res.redirect('/adminvr/properties');
 });
 
 // ---------- change password ----------
@@ -236,8 +236,8 @@ router.post('/users', requireMaster, checkCsrf, async (req, res) => {
     try {
       await pool.query("INSERT INTO users (email,password_hash,role,is_active,must_change_password) VALUES (?,?,'sub',1,1)",
         [email, bcrypt.hashSync(temp, 10)]);
-      // TODO: email the sub-user their temp password + /admin/login link (nodemailer + Hostinger SMTP)
-      msg = `Sub-user added. Share these with ${email}: password "${temp}" and the login link /admin/login.`;
+      // TODO: email the sub-user their temp password + /adminvr/login link (nodemailer + Hostinger SMTP)
+      msg = `Sub-user added. Share these with ${email}: password "${temp}" and the login link /adminvr/login.`;
     } catch (e) {
       error = e.code === 'ER_DUP_ENTRY' ? 'That email already exists.' : 'Could not add user.';
     }
@@ -247,7 +247,7 @@ router.post('/users', requireMaster, checkCsrf, async (req, res) => {
 });
 router.get('/users/:id/delete', requireMaster, checkCsrf, async (req, res) => {
   await pool.query("DELETE FROM users WHERE id=? AND role='sub'", [+req.params.id]);
-  res.redirect('/admin/users');
+  res.redirect('/adminvr/users');
 });
 
 // ---------- CSV import (master) ----------

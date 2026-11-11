@@ -3,7 +3,7 @@
 <%- include('partials/header') %>
 <h1><%= isEdit ? 'Edit' : 'Add' %> property</h1>
 <% if (error) { %><p class="note err"><%= error %></p><% } %>
-<form method="post" action="/admin/property-edit<%= isEdit ? ('?id=' + p.id) : '' %>" enctype="multipart/form-data" style="max-width:760px">
+<form method="post" action="/adminvr/property-edit<%= isEdit ? ('?id=' + p.id) : '' %>" enctype="multipart/form-data" style="max-width:760px">
   <input type="hidden" name="csrf" value="<%= csrf %>">
   <div class="row">
     <label>Search type<select name="search_type">

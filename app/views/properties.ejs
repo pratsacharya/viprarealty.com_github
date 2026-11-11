@@ -1,10 +1,10 @@
 <% pageTitle = 'Properties' %>
 <%- include('partials/header') %>
-<h1>Properties <a class="btn sm" href="/admin/property-edit" style="float:right">+ Add property</a></h1>
+<h1>Properties <a class="btn sm" href="/adminvr/property-edit" style="float:right">+ Add property</a></h1>
 <table>
   <tr><th>Title</th><th>Type</th><th>City</th><th>Price</th><th>Status</th><th>Featured</th><th>Actions</th></tr>
   <% if (!rows.length) { %><tr><td class="muted" colspan="7">No listings yet.</td></tr><% } %>
-  <% rows.forEach(p => { const b = '/admin/properties/' + p.id; %>
+  <% rows.forEach(p => { const b = '/adminvr/properties/' + p.id; %>
     <tr>
       <td><%= ((p.project_title||'')+' '+(p.building_name||'')).trim() || '—' %>
           <div class="muted"><%= p.cat || '' %><%= p.subcat ? (' · ' + p.subcat) : '' %></div></td>
@@ -14,7 +14,7 @@
       <td><span class="badge b-<%= p.status %>"><%= p.status.replace('_',' ').toUpperCase() %></span></td>
       <td><%= p.featured ? 'Yes' : '—' %></td>
       <td class="actions">
-        <a class="btn sm ghost" href="/admin/property-edit?id=<%= p.id %>">Edit</a>
+        <a class="btn sm ghost" href="/adminvr/property-edit?id=<%= p.id %>">Edit</a>
         <% if (user.role === 'master') { %>
           <% if (p.status !== 'active') { %><a class="btn sm" href="<%= b %>/status?status=active&csrf=<%= csrf %>">Activate</a><% } %>
           <% if (p.status !== 'inactive') { %><a class="btn sm ghost" href="<%= b %>/status?status=inactive&csrf=<%= csrf %>">Inactive</a><% } %>

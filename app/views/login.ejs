@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Admin login — <%= SITE_NAME %></title>
-<link rel="stylesheet" href="/public/admin.css">
+<link rel="stylesheet" href="/public/adminvr.css">
 </head>
 <body class="auth">
 <div class="auth-card">
   <h1><%= SITE_NAME %> admin</h1>
   <% if (error) { %><p class="note err"><%= error %></p><% } %>
-  <form method="post" action="/admin/login">
+  <form method="post" action="/adminvr/login">
     <label>Email<input type="email" name="email" required autofocus></label>
     <label>Password<input type="password" name="password" required></label>
     <button class="btn" type="submit">Log in</button>

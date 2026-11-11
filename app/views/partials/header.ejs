@@ -10,16 +10,16 @@
 <header class="topbar">
   <div class="brand"><%= SITE_NAME %> · Admin</div>
   <nav>
-    <a href="/admin/dashboard" class="<%= page === 'dashboard' ? 'active' : '' %>">Dashboard</a>
-    <a href="/admin/properties" class="<%= page === 'properties' ? 'active' : '' %>">Properties</a>
-    <a href="/admin/property-edit" class="<%= page === 'property-edit' ? 'active' : '' %>">Add property</a>
+    <a href="/adminvr/dashboard" class="<%= page === 'dashboard' ? 'active' : '' %>">Dashboard</a>
+    <a href="/adminvr/properties" class="<%= page === 'properties' ? 'active' : '' %>">Properties</a>
+    <a href="/adminvr/property-edit" class="<%= page === 'property-edit' ? 'active' : '' %>">Add property</a>
     <% if (user.role === 'master') { %>
-      <a href="/admin/import" class="<%= page === 'import' ? 'active' : '' %>">Import</a>
-      <a href="/admin/enquiries" class="<%= page === 'enquiries' ? 'active' : '' %>">Enquiries</a>
-      <a href="/admin/users" class="<%= page === 'users' ? 'active' : '' %>">Users</a>
+      <a href="/adminvr/import" class="<%= page === 'import' ? 'active' : '' %>">Import</a>
+      <a href="/adminvr/enquiries" class="<%= page === 'enquiries' ? 'active' : '' %>">Enquiries</a>
+      <a href="/adminvr/users" class="<%= page === 'users' ? 'active' : '' %>">Users</a>
     <% } %>
-    <a href="/admin/change-password" class="<%= page === 'change-password' ? 'active' : '' %>">Password</a>
+    <a href="/adminvr/change-password" class="<%= page === 'change-password' ? 'active' : '' %>">Password</a>
   </nav>
-  <div class="who"><%= user.email %> (<%= user.role %>) · <a href="/admin/logout">Log out</a></div>
+  <div class="who"><%= user.email %> (<%= user.role %>) · <a href="/adminvr/logout">Log out</a></div>
 </header>
 <main class="wrap">

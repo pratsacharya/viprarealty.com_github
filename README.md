@@ -21,10 +21,10 @@ cd app
 cp .env.sample .env        # fill in DB credentials + SESSION_SECRET
 npm install
 # import app/schema.sql into MySQL, then:
-npm start                  # http://localhost:3000  (admin at /admin/login)
+npm start                  # http://localhost:3000  (admin at /adminvr/login)
 ```
 
-Create the first master account at `/admin/install`, then log in at `/admin/login`.
+Create the first master account at `/adminvr/install`, then log in at `/adminvr/login`.
 Full Hostinger (Node.js app) deployment is in **`app/README-DEPLOY-NODE.md`**.
 
 ## Status

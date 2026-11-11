@@ -29,7 +29,7 @@ app.use(session({
 // trust the Hostinger/Passenger proxy so secure cookies & protocol work
 app.set('trust proxy', 1);
 
-app.use('/admin', require('./routes/admin'));
+app.use('/adminvr', require('./routes/admin'));
 app.use('/api', require('./routes/api'));
 
 // public website (static) served at the web root

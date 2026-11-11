@@ -6,7 +6,7 @@
 
 <h2>Add a sub-user</h2>
 <p class="muted">Sub-users can view and add listings only. They must change their password on first login.</p>
-<form method="post" action="/admin/users" class="row" style="max-width:620px;align-items:flex-end">
+<form method="post" action="/adminvr/users" class="row" style="max-width:620px;align-items:flex-end">
   <input type="hidden" name="csrf" value="<%= csrf %>">
   <label>Email<input type="email" name="email" required></label>
   <label>Temporary password<input type="text" name="temp" required></label>
@@ -22,7 +22,7 @@
       <td><%= u.role %></td>
       <td><%= u.must_change_password ? 'Pending first login' : 'Active' %></td>
       <td><% if (u.role === 'sub') { %>
-        <a class="btn sm danger" href="/admin/users/<%= u.id %>/delete?csrf=<%= csrf %>" onclick="return confirm('Delete this sub-user?')">Delete</a>
+        <a class="btn sm danger" href="/adminvr/users/<%= u.id %>/delete?csrf=<%= csrf %>" onclick="return confirm('Delete this sub-user?')">Delete</a>
       <% } %></td>
     </tr>
   <% }) %>

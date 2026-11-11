@@ -1,16 +1,16 @@
 const crypto = require('crypto');
 
 function requireLogin(req, res, next) {
-  if (!req.session.user) return res.redirect('/admin/login');
+  if (!req.session.user) return res.redirect('/adminvr/login');
   if (req.session.user.must_change_password
       && !req.path.startsWith('/change-password') && req.path !== '/logout') {
-    return res.redirect('/admin/change-password');
+    return res.redirect('/adminvr/change-password');
   }
   next();
 }
 
 function requireMaster(req, res, next) {
-  if (!req.session.user) return res.redirect('/admin/login');
+  if (!req.session.user) return res.redirect('/adminvr/login');
   if (req.session.user.role !== 'master') return res.status(403).send('Forbidden — master access only.');
   next();
 }

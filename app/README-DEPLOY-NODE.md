@@ -19,12 +19,12 @@ routes/
   admin.js             login, dashboard, properties CRUD + image upload, CSV import, enquiries, users, change-password, install
   api.js               POST /api/enquiry, POST /api/verify-otp, GET /api/listings
 views/                 EJS templates (+ partials/header, partials/footer)
-public/admin.css       admin styling (served at /public/admin.css)
+public/adminvr.css       admin styling (served at /public/adminvr.css)
 uploads/               property images are written here
 ```
 
-Routes: `/admin/login`, `/admin/dashboard`, `/admin/properties`, `/admin/property-edit`,
-`/admin/import`, `/admin/enquiries`, `/admin/users`, `/admin/change-password`, `/admin/install`
+Routes: `/adminvr/login`, `/adminvr/dashboard`, `/adminvr/properties`, `/adminvr/property-edit`,
+`/adminvr/import`, `/adminvr/enquiries`, `/adminvr/users`, `/adminvr/change-password`, `/adminvr/install`
 and the APIs under `/api/...`.
 
 ---
@@ -39,7 +39,7 @@ privileges. Then **phpMyAdmin → Import → `schema.sql` → Go** (creates tabl
 hPanel → **Advanced → Node.js** (Setup Node.js App):
 - **Node version:** 18 or newer.
 - **Application root:** a folder you'll upload to, e.g. `viprarealty-node`.
-- **Application URL:** `viprarealty.com` (root) — so the panel is at `viprarealty.com/admin`.
+- **Application URL:** `viprarealty.com` (root) — so the panel is at `viprarealty.com/adminvr`.
 - **Application startup file:** `app.js`.
 
 ### 3. Upload the code
@@ -55,9 +55,9 @@ In the Node.js app panel, add **Environment variables** (preferred on Hostinger)
 In the Node.js app panel click **Run NPM Install**, then **Start** (or Restart) the app.
 
 ### 6. Create the master account
-Open **`https://viprarealty.com/admin/install`**, create the master (use `24vipra@gmail.com` or any
+Open **`https://viprarealty.com/adminvr/install`**, create the master (use `24vipra@gmail.com` or any
 email). The install route self-disables once a master exists, so it's safe — remove it later if you like.
-Log in at **`https://viprarealty.com/admin/login`**.
+Log in at **`https://viprarealty.com/adminvr/login`**.
 
 ### 7. SSL + domain
 Your domain already points to the account. hPanel → **Security → SSL** → install free SSL → **Force HTTPS**.
@@ -96,7 +96,7 @@ and **Restart** on each deploy.
   enquiry → OTP flow (`/api/enquiry`, `/api/verify-otp`). Add listings in the admin and they appear
   on the public site automatically. Image placeholders show until a listing has images.
 - **CSV import:** the admin reads CSV — open the Excel template and *Save As → CSV* first.
-- Verified: routes load, all EJS views compile, the server boots and serves `/admin/login`, and DB/route
+- Verified: routes load, all EJS views compile, the server boots and serves `/adminvr/login`, and DB/route
   errors return HTTP 500 (JSON on `/api`) **without crashing** the process. Run a full click-through against
   your live MySQL after deploying.
 - This is a functional v1 matching the PRD; add rate-limiting on login/OTP and server-side image resizing

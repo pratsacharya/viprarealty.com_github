@@ -7,6 +7,7 @@ const multer = require('multer');
 const pool = require('../src/db');
 const { requireLogin, requireMaster, csrfToken, checkCsrf } = require('../src/middleware');
 const { sendSms } = require('../src/mailer');
+const { ensureSchema, dbMessage } = require('../src/bootstrap');
 
 const router = express.Router();
 
@@ -41,10 +42,22 @@ const base = (req) => ({ user: req.session.user, csrf: csrfToken(req), SITE_NAME
 
 // ---------- install (one-time) ----------
 router.get('/install', async (req, res) => {
+  try {
+    await ensureSchema();
+  } catch (e) {
+    console.error('install bootstrap failed:', e);
+    return res.render('install', { hasMaster: false, done: false, error: dbMessage(e), MASTER_EMAIL: process.env.MASTER_EMAIL || '', SITE_NAME: 'Vipra Realty' });
+  }
   const [[{ n }]] = await pool.query("SELECT COUNT(*) n FROM users WHERE role='master'");
   res.render('install', { hasMaster: n > 0, done: false, error: null, MASTER_EMAIL: process.env.MASTER_EMAIL || '', SITE_NAME: 'Vipra Realty' });
 });
 router.post('/install', async (req, res) => {
+  try {
+    await ensureSchema();
+  } catch (e) {
+    console.error('install bootstrap failed:', e);
+    return res.render('install', { hasMaster: false, done: false, error: dbMessage(e), MASTER_EMAIL: (req.body.email || '').trim(), SITE_NAME: 'Vipra Realty' });
+  }
   const [[{ n }]] = await pool.query("SELECT COUNT(*) n FROM users WHERE role='master'");
   if (n > 0) return res.render('install', { hasMaster: true, done: false, error: null, MASTER_EMAIL: '', SITE_NAME: 'Vipra Realty' });
   const email = (req.body.email || '').trim();

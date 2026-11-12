@@ -36,21 +36,36 @@ async function ensureSchema() {
 // Turn a DB driver error into a message that names the Hostinger setting to fix.
 function dbMessage(e) {
   const code = e && e.code;
+  let msg;
   switch (code) {
     case 'ER_ACCESS_DENIED_ERROR':
-      return 'Database access denied. Check the DB_USER and DB_PASS environment variables in Hostinger, and that the user is assigned to the database.';
+      msg = 'Database access denied. Check the DB_USER and DB_PASS environment variables in Hostinger, and that the user is assigned to the database.';
+      break;
     case 'ER_BAD_DB_ERROR':
-      return 'Database not found. Check DB_NAME, and create that MySQL database in Hostinger if it does not exist yet.';
+      msg = 'Database not found. Check DB_NAME, and create that MySQL database in Hostinger if it does not exist yet.';
+      break;
     case 'ENOTFOUND':
     case 'EAI_AGAIN':
-      return 'Database host not found. Check the DB_HOST value (on Hostinger shared hosting it is usually "localhost").';
+      msg = 'Database host not found. Check the DB_HOST value (on Hostinger shared hosting it is usually "localhost").';
+      break;
     case 'ECONNREFUSED':
     case 'ETIMEDOUT':
     case 'PROTOCOL_CONNECTION_LOST':
-      return 'Could not reach the database server. Check DB_HOST and that the MySQL database is running.';
+      msg = 'Could not reach the database server. Check DB_HOST and that the MySQL database is running.';
+      break;
     default:
-      return 'Database error (' + (code || (e && e.message) || 'unknown') + '). Check the DB_HOST, DB_NAME, DB_USER and DB_PASS environment variables in Hostinger.';
+      msg = 'Database error (' + (code || (e && e.message) || 'unknown') + '). Check the DB_HOST, DB_NAME, DB_USER and DB_PASS environment variables in Hostinger.';
   }
+  // Surface what the app is actually sending, to diagnose. Shows the exact
+  // user@host MySQL saw and whether a password was supplied. The app also
+  // reports the DB_HOST/DB_NAME it loaded (password never shown).
+  const seen = [];
+  if (e && e.sqlMessage) seen.push('server: ' + e.sqlMessage);
+  seen.push('app sent DB_HOST=' + (process.env.DB_HOST || '(unset→localhost)') +
+            ', DB_NAME=' + (process.env.DB_NAME || '(unset)') +
+            ', DB_USER=' + (process.env.DB_USER || '(unset)') +
+            ', DB_PASS=' + (process.env.DB_PASS ? 'set(' + process.env.DB_PASS.length + ' chars)' : '(unset)'));
+  return msg + '  —  [' + seen.join(' | ') + ']';
 }
 
 module.exports = { ensureSchema, dbMessage };

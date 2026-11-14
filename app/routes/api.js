@@ -84,7 +84,7 @@ router.post('/verify-otp', async (req, res) => {
 // Public read API for the front-end
 router.get('/listings', async (req, res) => {
   const where = ["p.status='active'"]; const args = [];
-  const eq = { search_type: 'p.search_type', listing_type: 'p.listing_type', city: 'p.city' };
+  const eq = { search_type: 'p.search_type', city: 'p.city' };
   for (const [k, col] of Object.entries(eq)) if (req.query[k]) { where.push(`${col}=?`); args.push(req.query[k]); }
   if (req.query.category) { where.push('c.name=?'); args.push(req.query.category); }
   if (req.query.sub) { where.push('s.name=?'); args.push(req.query.sub); }

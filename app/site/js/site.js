@@ -120,7 +120,7 @@
     if (!grid) return;
     var url = new URLSearchParams(location.search);
     // prefill controls from URL
-    [['f-type', 'search_type'], ['f-cat', 'category'], ['f-city', 'city'], ['f-listing', 'listing_type'], ['f-q', 'q']].forEach(function (m) {
+    [['f-type', 'search_type'], ['f-cat', 'category'], ['f-city', 'city'], ['f-q', 'q']].forEach(function (m) {
       var el = document.getElementById(m[0]); if (el && url.get(m[1])) el.value = url.get(m[1]);
     });
     // Sub-category is populated by the cascade; remember the desired value from the URL.
@@ -131,7 +131,7 @@
     function run() {
       var params = {
         search_type: val('f-type'), category: val('f-cat'), sub: val('f-sub'),
-        city: val('f-city'), listing_type: val('f-listing'), q: val('f-q'),
+        city: val('f-city'), q: val('f-q'),
       };
       grid.innerHTML = '<p style="color:#8A93A1;grid-column:1/-1">Loading…</p>';
       getListings(params).then(function (d) {
@@ -170,8 +170,7 @@
       setHTML('d-price', priceText(l));
       var b = badge(l);
       var badges = '<span style="background:' + b[1] + ';color:#fff;font-size:12px;font-weight:700;padding:6px 12px;border-radius:7px">' + b[0] + '</span>' +
-        (l.category ? ' <span style="background:#EDE8FB;color:#6B4BC9;font-size:12px;font-weight:600;padding:6px 12px;border-radius:7px">' + esc((l.category + (l.sub_category ? ' · ' + l.sub_category : '')).toUpperCase()) + '</span>' : '') +
-        (l.listing_type ? ' <span style="background:#F3F5F8;color:#43506A;font-size:12px;font-weight:600;padding:6px 12px;border-radius:7px">' + esc(l.listing_type.toUpperCase()) + '</span>' : '');
+        (l.category ? ' <span style="background:#EDE8FB;color:#6B4BC9;font-size:12px;font-weight:600;padding:6px 12px;border-radius:7px">' + esc((l.category + (l.sub_category ? ' · ' + l.sub_category : '')).toUpperCase()) + '</span>' : '');
       setHTML('d-badges', badges);
       setHTML('d-highlights', specs(l).map(function (s) {
         return '<div style="border:1px solid #ECEEF2;border-radius:14px;padding:16px"><div style="font-size:18px;font-weight:700;color:#151922;font-family:Poppins,sans-serif">' + esc(s) + '</div></div>';

@@ -8,7 +8,7 @@
     <tr>
       <td><%= p.project_title || '—' %>
           <div class="muted"><%= p.cat || '' %><%= p.subcat ? (' · ' + p.subcat) : '' %></div></td>
-      <td><%= p.search_type %><% if (p.listing_type) { %><br><span class="muted"><%= p.listing_type %></span><% } %></td>
+      <td><%= p.search_type %></td>
       <td><%= p.city || '' %></td>
       <td><% if (p.search_type === 'Buy') { %><%= p.sale_price ? '₹' + Number(p.sale_price).toLocaleString('en-IN') : '—' %><% } else { %><%= p.monthly_rent ? '₹' + Number(p.monthly_rent).toLocaleString('en-IN') + '/mo' : '—' %><% } %></td>
       <td><span class="badge b-<%= p.status %>"><%= p.status.replace('_',' ').toUpperCase() %></span></td>

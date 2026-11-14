@@ -144,7 +144,7 @@ router.get('/properties/:id/delete', requireMaster, checkCsrf, async (req, res) 
 });
 
 // ---------- add / edit ----------
-const PROP_FIELDS = ['project_title', 'description', 'search_type', 'listing_type',
+const PROP_FIELDS = ['project_title', 'description', 'search_type',
   'category_id', 'sub_category_id', 'city', 'locality', 'sale_price', 'monthly_rent', 'deposit_amount', 'down_payment',
   'possession_date', 'bedrooms', 'bathrooms', 'carpet_area', 'builtup_area', 'total_floors', 'floor_no',
   'ceiling_height', 'status', 'featured'];
@@ -160,7 +160,7 @@ async function loadFormData() {
 router.get('/property-edit', async (req, res) => {
   const id = +(req.query.id || 0);
   if (id && req.session.user.role !== 'master') return res.status(403).send('Editing is master-only.');
-  let p = { search_type: 'Rent', listing_type: '', status: 'active', featured: 0 };
+  let p = { search_type: 'Rent', status: 'active', featured: 0 };
   let imgCount = 0;
   if (id) {
     const [rows] = await pool.query('SELECT * FROM properties WHERE id=?', [id]);
@@ -181,7 +181,6 @@ router.post('/property-edit', upload.array('images', 20), async (req, res) => {
   const data = {
     project_title: str('project_title'),
     description: str('description'), search_type: str('search_type') === 'Buy' ? 'Buy' : 'Rent',
-    listing_type: ['Resale', 'Under Construction'].includes(str('listing_type')) ? str('listing_type') : '',
     category_id: num('category_id'), sub_category_id: num('sub_category_id'), city: str('city'), locality: str('locality'),
     sale_price: num('sale_price'), monthly_rent: num('monthly_rent'), deposit_amount: num('deposit_amount'),
     down_payment: num('down_payment'), possession_date: str('possession_date'), bedrooms: num('bedrooms'),
@@ -300,14 +299,13 @@ router.post('/import', requireMaster, uploadCsv.single('csv'), async (req, res) 
     const propTitle = g('property title') || g('project title');
     if (!propTitle) { fail++; errors.push(`Row ${total}: missing property title`); continue; }
     const stype = g('search type').toLowerCase() === 'buy' ? 'Buy' : 'Rent';
-    const ltype = ['Resale', 'Under Construction'].includes(g('listing type')) ? g('listing type') : '';
     try {
       const [r] = await pool.query(
-        `INSERT INTO properties (project_title,description,search_type,listing_type,
+        `INSERT INTO properties (project_title,description,search_type,
           category_id,sub_category_id,city,locality,sale_price,monthly_rent,deposit_amount,down_payment,possession_date,
           bedrooms,bathrooms,carpet_area,builtup_area,total_floors,floor_no,ceiling_height,status,featured,created_by)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-        [propTitle, g('brief description'), stype, ltype,
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        [propTitle, g('brief description'), stype,
          catMap[g('category').toLowerCase()] || null, subMap[g('sub-category').toLowerCase()] || null,
          g('city'), g('locality / area'), dig(g('sale price')), dig(g('monthly rent')), dig(g('deposit amount')),
          dig(g('down payment')), g('possession date'), dig(g('bedrooms')), dig(g('bathrooms')), dig(g('carpet area')),

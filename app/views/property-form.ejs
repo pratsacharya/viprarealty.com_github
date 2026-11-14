@@ -8,8 +8,6 @@
   <div class="row">
     <label>Search type<select name="search_type">
       <% ['Rent','Buy'].forEach(o => { %><option <%= v('search_type')===o?'selected':'' %>><%= o %></option><% }) %></select></label>
-    <label>Listing type (Buy)<select name="listing_type"><option value="">—</option>
-      <% ['Resale','Under Construction'].forEach(o => { %><option <%= v('listing_type')===o?'selected':'' %>><%= o %></option><% }) %></select></label>
     <label>Status<select name="status">
       <% Object.entries({active:'Active',inactive:'Inactive',sold_out:'Sold out',rented_out:'Rented out'}).forEach(([k,lbl]) => { %>
         <option value="<%= k %>" <%= v('status')===k?'selected':'' %>><%= lbl %></option><% }) %></select></label>

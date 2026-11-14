@@ -108,7 +108,7 @@ router.get('/dashboard', async (req, res) => {
   };
   const [byCat] = await pool.query(`SELECT c.name, COUNT(p.id) n FROM categories c
     LEFT JOIN properties p ON p.category_id=c.id GROUP BY c.id`);
-  const [top] = await pool.query(`SELECT p.project_title, p.building_name, COUNT(e.id) n
+  const [top] = await pool.query(`SELECT p.project_title, COUNT(e.id) n
     FROM properties p JOIN enquiries e ON e.property_id=p.id AND e.otp_verified=1
     GROUP BY p.id ORDER BY n DESC LIMIT 5`);
   res.render('dashboard', { ...base(req), page: 'dashboard', counts, byCat, top });
@@ -140,7 +140,7 @@ router.get('/properties/:id/delete', requireMaster, checkCsrf, async (req, res) 
 });
 
 // ---------- add / edit ----------
-const PROP_FIELDS = ['builder_name', 'project_title', 'building_name', 'description', 'search_type', 'listing_type',
+const PROP_FIELDS = ['project_title', 'description', 'search_type', 'listing_type',
   'category_id', 'sub_category_id', 'city', 'locality', 'sale_price', 'monthly_rent', 'deposit_amount', 'down_payment',
   'possession_date', 'bedrooms', 'bathrooms', 'carpet_area', 'builtup_area', 'total_floors', 'floor_no',
   'ceiling_height', 'status', 'featured'];
@@ -173,7 +173,7 @@ router.post('/property-edit', upload.array('images', 20), async (req, res) => {
   const num = (k) => { const v = (req.body[k] || '').toString().replace(/[^0-9]/g, ''); return v === '' ? null : parseInt(v, 10); };
   const str = (k) => (req.body[k] || '').trim();
   const data = {
-    builder_name: str('builder_name'), project_title: str('project_title'), building_name: str('building_name'),
+    project_title: str('project_title'),
     description: str('description'), search_type: str('search_type') === 'Buy' ? 'Buy' : 'Rent',
     listing_type: ['Resale', 'Under Construction'].includes(str('listing_type')) ? str('listing_type') : '',
     category_id: num('category_id'), sub_category_id: num('sub_category_id'), city: str('city'), locality: str('locality'),
@@ -185,9 +185,9 @@ router.post('/property-edit', upload.array('images', 20), async (req, res) => {
     featured: req.body.featured ? 1 : 0,
   };
 
-  if (!data.project_title && !data.building_name) {
+  if (!data.project_title) {
     (req.files || []).forEach((f) => { try { fs.unlinkSync(f.path); } catch (e) {} });
-    return res.render('property-form', { ...base(req), page: 'property-edit', ...(await loadFormData()), p: { ...data }, isEdit: !!id, imgCount: 0, error: 'Enter a project title or building name.' });
+    return res.render('property-form', { ...base(req), page: 'property-edit', ...(await loadFormData()), p: { ...data }, isEdit: !!id, imgCount: 0, error: 'Enter a property title.' });
   }
 
   let pid;
@@ -230,7 +230,7 @@ router.post('/change-password', checkCsrf, async (req, res) => {
 
 // ---------- enquiries (master) ----------
 router.get('/enquiries', requireMaster, async (req, res) => {
-  const [rows] = await pool.query(`SELECT e.*, p.project_title, p.building_name FROM enquiries e
+  const [rows] = await pool.query(`SELECT e.*, p.project_title FROM enquiries e
     LEFT JOIN properties p ON p.id=e.property_id WHERE e.otp_verified=1 ORDER BY e.created_at DESC LIMIT 500`);
   res.render('enquiries', { ...base(req), page: 'enquiries', rows });
 });
@@ -291,16 +291,17 @@ router.post('/import', requireMaster, uploadCsv.single('csv'), async (req, res) 
   for (const row of records) {
     total++;
     const g = (k) => (row[k] || '').trim();
-    if (!g('project title') && !g('building name')) { fail++; errors.push(`Row ${total}: missing project title and building name`); continue; }
+    const propTitle = g('property title') || g('project title');
+    if (!propTitle) { fail++; errors.push(`Row ${total}: missing property title`); continue; }
     const stype = g('search type').toLowerCase() === 'buy' ? 'Buy' : 'Rent';
     const ltype = ['Resale', 'Under Construction'].includes(g('listing type')) ? g('listing type') : '';
     try {
       const [r] = await pool.query(
-        `INSERT INTO properties (builder_name,project_title,building_name,description,search_type,listing_type,
+        `INSERT INTO properties (project_title,description,search_type,listing_type,
           category_id,sub_category_id,city,locality,sale_price,monthly_rent,deposit_amount,down_payment,possession_date,
           bedrooms,bathrooms,carpet_area,builtup_area,total_floors,floor_no,ceiling_height,status,featured,created_by)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-        [g('builder name'), g('project title'), g('building name'), g('brief description'), stype, ltype,
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        [propTitle, g('brief description'), stype, ltype,
          catMap[g('category').toLowerCase()] || null, subMap[g('sub-category').toLowerCase()] || null,
          g('city'), g('locality / area'), dig(g('sale price')), dig(g('monthly rent')), dig(g('deposit amount')),
          dig(g('down payment')), g('possession date'), dig(g('bedrooms')), dig(g('bathrooms')), dig(g('carpet area')),

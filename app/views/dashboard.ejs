@@ -15,6 +15,6 @@
 <h2>Top properties by enquiries</h2>
 <table><tr><th>Property</th><th>Enquiries</th></tr>
 <% if (!top.length) { %><tr><td class="muted" colspan="2">No verified enquiries yet.</td></tr><% } %>
-<% top.forEach(r => { %><tr><td><%= ((r.project_title||'')+' '+(r.building_name||'')).trim() %></td><td><%= r.n %></td></tr><% }) %>
+<% top.forEach(r => { %><tr><td><%= r.project_title || '—' %></td><td><%= r.n %></td></tr><% }) %>
 </table>
 <%- include('partials/footer') %>

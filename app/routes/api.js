@@ -53,11 +53,11 @@ router.post('/verify-otp', async (req, res) => {
   await pool.query('UPDATE enquiries SET otp_verified=1 WHERE id=?', [enquiryId]);
 
   const [erows] = await pool.query(
-    `SELECT e.*, p.project_title, p.building_name FROM enquiries e
+    `SELECT e.*, p.project_title FROM enquiries e
      LEFT JOIN properties p ON p.id=e.property_id WHERE e.id=?`, [enquiryId]);
   const e = erows[0];
   if (e) {
-    const label = `${e.project_title || ''} ${e.building_name || ''}`.trim() || '—';
+    const label = (e.project_title || '').trim() || '—';
     await notifyMasterEnquiry({ name: e.name, mobile: e.mobile, requirement: e.requirement, propLabel: label });
     await sendSms(mobile, 'Thank you for your enquiry, we will get in touch with you — Vipra Realty.');
   }
@@ -74,8 +74,8 @@ router.get('/listings', async (req, res) => {
   if (req.query.featured) where.push('p.featured=1');
   if (req.query.id) { where.push('p.id=?'); args.push(parseInt(req.query.id, 10)); }
   if (req.query.q) {
-    where.push('(p.project_title LIKE ? OR p.building_name LIKE ? OR p.locality LIKE ? OR p.description LIKE ?)');
-    const like = '%' + req.query.q + '%'; args.push(like, like, like, like);
+    where.push('(p.project_title LIKE ? OR p.locality LIKE ? OR p.description LIKE ?)');
+    const like = '%' + req.query.q + '%'; args.push(like, like, like);
   }
   const [rows] = await pool.query(
     `SELECT p.*, c.name category, s.name sub_category FROM properties p

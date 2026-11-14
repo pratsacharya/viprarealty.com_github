@@ -33,7 +33,7 @@
 
   function cardHTML(l) {
     var b = badge(l);
-    var title = (l.project_title || '') + ' ' + (l.building_name || '');
+    var title = l.project_title || '';
     var media = l.images && l.images.length
       ? '<img src="' + esc(imgSrc(l.images[0])) + '" alt="" style="width:100%;height:100%;object-fit:cover">'
       : PLACEHOLDER;
@@ -128,7 +128,7 @@
     getListings({ id: id }).then(function (d) {
       var l = (d.listings || [])[0];
       if (!l) { root.innerHTML = '<p style="color:#8A93A1">Property not found.</p>'; return; }
-      set('d-title', (l.project_title || '') + ' ' + (l.building_name || ''));
+      set('d-title', l.project_title || '');
       set('d-loc', [l.locality, l.city].filter(Boolean).join(', '));
       setHTML('d-price', priceText(l));
       var b = badge(l);
@@ -149,7 +149,7 @@
         : '<div style="border-radius:14px;min-height:320px;background:linear-gradient(135deg,#E7EBF1,#D7E2E1);display:flex;align-items:center;justify-content:center">' + PLACEHOLDER + '</div>';
       // key details
       setHTML('d-details', [
-        ['Builder', l.builder_name], ['Project', l.project_title], ['Possession', l.possession_date],
+        ['Possession', l.possession_date],
         ['Deposit', l.deposit_amount ? inr(l.deposit_amount) : ''], ['Down payment', l.down_payment ? inr(l.down_payment) : ''],
         ['Status', (l.status || '').replace('_', ' ')],
       ].filter(function (r) { return r[1]; }).map(function (r) {

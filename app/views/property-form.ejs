@@ -23,11 +23,7 @@
       <% cities.forEach(c => { %><option <%= v('city')===c?'selected':'' %>><%= c %></option><% }) %></select></label>
     <label>Locality / area<input name="locality" value="<%= v('locality') %>"></label>
   </div>
-  <div class="row">
-    <label>Builder name<input name="builder_name" value="<%= v('builder_name') %>"></label>
-    <label>Project title<input name="project_title" value="<%= v('project_title') %>"></label>
-    <label>Building name<input name="building_name" value="<%= v('building_name') %>"></label>
-  </div>
+  <label>Property title<input name="project_title" value="<%= v('project_title') %>" placeholder="e.g. 2 BHK Flat in Whitefield" required></label>
   <label>Description<textarea name="description"><%= v('description') %></textarea></label>
   <div class="row">
     <label>Sale price (₹)<input name="sale_price" value="<%= v('sale_price') %>"></label>

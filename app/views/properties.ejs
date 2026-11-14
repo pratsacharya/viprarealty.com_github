@@ -6,7 +6,7 @@
   <% if (!rows.length) { %><tr><td class="muted" colspan="7">No listings yet.</td></tr><% } %>
   <% rows.forEach(p => { const b = '/adminvr/properties/' + p.id; %>
     <tr>
-      <td><%= ((p.project_title||'')+' '+(p.building_name||'')).trim() || '—' %>
+      <td><%= p.project_title || '—' %>
           <div class="muted"><%= p.cat || '' %><%= p.subcat ? (' · ' + p.subcat) : '' %></div></td>
       <td><%= p.search_type %><% if (p.listing_type) { %><br><span class="muted"><%= p.listing_type %></span><% } %></td>
       <td><%= p.city || '' %></td>

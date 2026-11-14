@@ -9,7 +9,7 @@
       <td><%= new Date(r.created_at).toLocaleString('en-IN') %></td>
       <td><%= r.name %></td>
       <td><a href="https://wa.me/91<%= digits %>"><%= r.mobile %></a></td>
-      <td><%= ((r.project_title||'')+' '+(r.building_name||'')).trim() || '—' %></td>
+      <td><%= r.project_title || '—' %></td>
       <td><%= r.requirement %></td>
     </tr>
   <% }) %>

@@ -10,3 +10,4 @@ app/uploads/*
 .DS_Store
 Thumbs.db
 *.log
+app/node_modules/

@@ -59,6 +59,37 @@
       .then(function (r) { return r.json(); });
   }
 
+  // Category → sub-category tree (cached), drives the dependent filters.
+  var _treeP;
+  function loadTree() {
+    if (!_treeP) _treeP = fetch('/api/categories').then(function (r) { return r.json(); })
+      .then(function (d) { return d.tree || {}; }).catch(function () { return {}; });
+    return _treeP;
+  }
+
+  // Make a Sub-category <select> depend on a Category <select>.
+  function wireCascade(catId, subId, tree) {
+    var catSel = document.getElementById(catId);
+    var subSel = document.getElementById(subId);
+    if (!catSel || !subSel) return;
+    // normalise an "All categories" placeholder to an empty value so it means "no filter"
+    if (catSel.options.length && /all categor/i.test(catSel.options[0].text)) catSel.options[0].value = '';
+    var desired = subSel.getAttribute('data-value') || '';
+    function fillSubs() {
+      var cat = catSel.value;
+      var names = (cat && tree[cat]) ? tree[cat]
+        : Object.keys(tree).reduce(function (a, k) { return a.concat(tree[k]); }, []);
+      subSel.innerHTML = '<option value="">Any type</option>';
+      names.forEach(function (n) {
+        var o = document.createElement('option'); o.value = n; o.textContent = n;
+        if (n === desired) o.selected = true;
+        subSel.appendChild(o);
+      });
+    }
+    catSel.addEventListener('change', function () { desired = ''; fillSubs(); });
+    fillSubs();
+  }
+
   // ---------------- Home ----------------
   function initHome() {
     var grid = document.getElementById('featured-grid');
@@ -68,6 +99,8 @@
       grid.innerHTML = ls.length ? ls.map(cardHTML).join('')
         : '<p style="color:#8A93A1;grid-column:1/-1">No listings yet — add some from the admin panel.</p>';
     }).catch(function () { grid.innerHTML = '<p style="color:#8A93A1;grid-column:1/-1">Could not load listings.</p>'; });
+
+    loadTree().then(function (tree) { wireCascade('hero-cat', 'hero-sub', tree); });
 
     var sb = document.getElementById('hero-search');
     if (sb) sb.addEventListener('click', function (e) {
@@ -87,9 +120,13 @@
     if (!grid) return;
     var url = new URLSearchParams(location.search);
     // prefill controls from URL
-    [['f-type', 'search_type'], ['f-cat', 'category'], ['f-sub', 'sub'], ['f-city', 'city'], ['f-listing', 'listing_type'], ['f-q', 'q']].forEach(function (m) {
+    [['f-type', 'search_type'], ['f-cat', 'category'], ['f-city', 'city'], ['f-listing', 'listing_type'], ['f-q', 'q']].forEach(function (m) {
       var el = document.getElementById(m[0]); if (el && url.get(m[1])) el.value = url.get(m[1]);
     });
+    // Sub-category is populated by the cascade; remember the desired value from the URL.
+    var subEl = document.getElementById('f-sub');
+    if (subEl && url.get('sub')) subEl.setAttribute('data-value', url.get('sub'));
+    loadTree().then(function (tree) { wireCascade('f-cat', 'f-sub', tree); run(); });
 
     function run() {
       var params = {
@@ -116,7 +153,7 @@
         run();
       });
     });
-    run();
+    // initial run() is triggered by the cascade callback above once the tree loads
   }
 
   // ---------------- Property detail ----------------

@@ -47,3 +47,9 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log('Vipra Realty admin running on port ' + PORT));
+
+// Reconcile the category/sub-category tree to the canonical list on startup.
+// Non-fatal: if the DB isn't reachable yet, log and carry on.
+require('./src/bootstrap').ensureCategoryTree()
+  .then(() => console.log('Category tree reconciled'))
+  .catch((e) => console.error('Category tree reconcile skipped:', e.code || e.message));

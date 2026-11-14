@@ -15,6 +15,23 @@ const router = express.Router();
       : h));
 });
 
+// Category → sub-category tree, from the live DB (drives the public filters)
+router.get('/categories', async (req, res) => {
+  const [cats] = await pool.query('SELECT id, name FROM categories ORDER BY id');
+  const [subs] = await pool.query('SELECT category_id, name FROM sub_categories');
+  const { CATEGORY_TREE } = require('../src/bootstrap');
+  const order = {};
+  Object.values(CATEGORY_TREE).forEach((list) => list.forEach((n, i) => { order[n] = i; }));
+  const tree = {};
+  cats.forEach((c) => { tree[c.name] = []; });
+  subs.forEach((s) => {
+    const c = cats.find((x) => x.id === s.category_id);
+    if (c) tree[c.name].push(s.name);
+  });
+  Object.keys(tree).forEach((k) => tree[k].sort((a, b) => (order[a] ?? 99) - (order[b] ?? 99)));
+  res.json({ tree });
+});
+
 // Step 1: submit enquiry, issue a 4-digit OTP
 router.post('/enquiry', async (req, res) => {
   const name = (req.body.name || '').trim();

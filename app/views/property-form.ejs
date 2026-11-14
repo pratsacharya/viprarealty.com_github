@@ -17,8 +17,8 @@
   <div class="row">
     <label>Category<select name="category_id"><option value="">—</option>
       <% cats.forEach(c => { %><option value="<%= c.id %>" <%= String(v('category_id'))===String(c.id)?'selected':'' %>><%= c.name %></option><% }) %></select></label>
-    <label>Sub-category<select name="sub_category_id"><option value="">—</option>
-      <% subs.forEach(s => { %><option value="<%= s.id %>" <%= String(v('sub_category_id'))===String(s.id)?'selected':'' %>><%= s.name %></option><% }) %></select></label>
+    <label>Sub-category<select name="sub_category_id" id="sub_category_id"><option value="">—</option>
+      <% subs.forEach(s => { %><option value="<%= s.id %>" data-cat="<%= s.category_id %>" <%= String(v('sub_category_id'))===String(s.id)?'selected':'' %>><%= s.name %></option><% }) %></select></label>
     <label>City<select name="city"><option value="">—</option>
       <% cities.forEach(c => { %><option <%= v('city')===c?'selected':'' %>><%= c %></option><% }) %></select></label>
     <label>Locality / area<input name="locality" value="<%= v('locality') %>"></label>
@@ -48,4 +48,27 @@
   <% if (imgCount) { %><p class="muted" style="margin-top:10px"><%= imgCount %> image(s) already uploaded.</p><% } %>
   <button class="btn" type="submit" style="margin-top:18px"><%= isEdit ? 'Save changes' : 'Add property' %></button>
 </form>
+<script>
+(function () {
+  // Dependent Sub-category: show only the selected Category's sub-types.
+  var SUBS = [<% subs.forEach(function (s, i) { %><%- i ? ',' : '' %>{id:<%= s.id %>,cat:<%= s.category_id %>,name:<%- JSON.stringify(s.name) %>}<% }); %>];
+  var catSel = document.querySelector('select[name="category_id"]');
+  var subSel = document.getElementById('sub_category_id');
+  if (!catSel || !subSel) return;
+  var current = '<%= v("sub_category_id") %>';
+  function fill() {
+    var cat = catSel.value;
+    subSel.innerHTML = '<option value="">—</option>';
+    SUBS.filter(function (s) { return !cat || String(s.cat) === String(cat); })
+      .forEach(function (s) {
+        var o = document.createElement('option');
+        o.value = s.id; o.textContent = s.name;
+        if (String(s.id) === String(current)) o.selected = true;
+        subSel.appendChild(o);
+      });
+  }
+  catSel.addEventListener('change', function () { current = ''; fill(); });
+  fill();
+})();
+</script>
 <%- include('partials/footer') %>

@@ -4,6 +4,14 @@ const fs = require('fs');
 const path = require('path');
 const pool = require('./db');
 
+// Single source of truth for the category → sub-category tree.
+// Change this list (and redeploy) to add/remove/reorder sub-categories;
+// ensureCategoryTree() reconciles the live DB to match on each startup.
+const CATEGORY_TREE = {
+  Residential: ['Flats', 'Villas', 'Pent House', 'Independent House', 'Independent Plots'],
+  Commercial: ['Office Space', 'Retail Store', 'Warehouse', 'Land'],
+};
+
 async function ensureSchema() {
   const raw = fs.readFileSync(path.join(__dirname, '..', 'schema.sql'), 'utf8');
   // Split into statements, drop comment-only chunks.
@@ -18,15 +26,43 @@ async function ensureSchema() {
     for (const st of statements) {
       if (/^CREATE\s+TABLE/i.test(st)) await conn.query(st);
     }
-    // 2) Seed the category tree only when empty (avoids duplicates on repeat).
+    // 2) Seed the categories only when empty (sub-categories handled by
+    //    ensureCategoryTree, which also runs on an existing DB).
     const [[{ c }]] = await conn.query('SELECT COUNT(*) c FROM categories');
     if (c === 0) {
       await conn.query("INSERT INTO categories (name) VALUES ('Residential'),('Commercial')");
-      await conn.query(
-        "INSERT INTO sub_categories (category_id, name) VALUES " +
-          "(1,'Flats'),(1,'Villas'),(1,'Independent House'),(1,'Independent Plots')," +
-          "(2,'Office Space'),(2,'Retail Store'),(2,'Warehouse'),(2,'Land'),(2,'Others')"
+    }
+  } finally {
+    conn.release();
+  }
+  await ensureCategoryTree();
+}
+
+// Reconcile the live categories/sub-categories to CATEGORY_TREE:
+// add any missing, and remove any that are no longer in the tree AND not
+// referenced by a property. Idempotent — safe to run on every startup.
+async function ensureCategoryTree() {
+  const conn = await pool.getConnection();
+  try {
+    for (const [cat, subs] of Object.entries(CATEGORY_TREE)) {
+      await conn.query('INSERT IGNORE INTO categories (name) VALUES (?)', [cat]);
+      const [[c]] = await conn.query('SELECT id FROM categories WHERE name=?', [cat]);
+      const catId = c.id;
+      for (const s of subs) {
+        await conn.query(
+          'INSERT INTO sub_categories (category_id, name) SELECT ?, ? FROM DUAL ' +
+            'WHERE NOT EXISTS (SELECT 1 FROM sub_categories WHERE category_id=? AND name=?)',
+          [catId, s, catId, s]
+        );
+      }
+      const [extra] = await conn.query(
+        'SELECT id FROM sub_categories WHERE category_id=? AND name NOT IN (?)',
+        [catId, subs]
       );
+      for (const e of extra) {
+        const [[u]] = await conn.query('SELECT COUNT(*) n FROM properties WHERE sub_category_id=?', [e.id]);
+        if (u.n === 0) await conn.query('DELETE FROM sub_categories WHERE id=?', [e.id]);
+      }
     }
   } finally {
     conn.release();
@@ -59,4 +95,4 @@ function dbMessage(e) {
   return msg;
 }
 
-module.exports = { ensureSchema, dbMessage };
+module.exports = { ensureSchema, dbMessage, ensureCategoryTree, CATEGORY_TREE };

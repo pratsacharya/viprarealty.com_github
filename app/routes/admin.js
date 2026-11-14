@@ -7,7 +7,11 @@ const multer = require('multer');
 const pool = require('../src/db');
 const { requireLogin, requireMaster, csrfToken, checkCsrf } = require('../src/middleware');
 const { sendSms } = require('../src/mailer');
-const { ensureSchema, dbMessage } = require('../src/bootstrap');
+const { ensureSchema, dbMessage, CATEGORY_TREE } = require('../src/bootstrap');
+
+// canonical display order for sub-categories, from the tree
+const SUB_ORDER = {};
+Object.values(CATEGORY_TREE).forEach((list) => list.forEach((n, i) => { SUB_ORDER[n] = i; }));
 
 const router = express.Router();
 
@@ -147,7 +151,9 @@ const PROP_FIELDS = ['project_title', 'description', 'search_type', 'listing_typ
 
 async function loadFormData() {
   const [cats] = await pool.query('SELECT * FROM categories ORDER BY id');
-  const [subs] = await pool.query('SELECT * FROM sub_categories ORDER BY category_id, id');
+  const [subs] = await pool.query('SELECT * FROM sub_categories');
+  subs.sort((a, b) => a.category_id - b.category_id ||
+    ((SUB_ORDER[a.name] ?? 99) - (SUB_ORDER[b.name] ?? 99)));
   return { cats, subs, cities: ['Bangalore', 'Mumbai', 'Navi Mumbai', 'Thane'] };
 }
 

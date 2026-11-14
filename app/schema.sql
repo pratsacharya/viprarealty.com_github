@@ -98,8 +98,8 @@ CREATE TABLE IF NOT EXISTS import_batches (
 -- Seed the category tree
 INSERT INTO categories (name) VALUES ('Residential'), ('Commercial');
 INSERT INTO sub_categories (category_id, name) VALUES
- (1,'Flats'),(1,'Villas'),(1,'Independent House'),(1,'Independent Plots'),
- (2,'Office Space'),(2,'Retail Store'),(2,'Warehouse'),(2,'Land'),(2,'Others');
+ (1,'Flats'),(1,'Villas'),(1,'Pent House'),(1,'Independent House'),(1,'Independent Plots'),
+ (2,'Office Space'),(2,'Retail Store'),(2,'Warehouse'),(2,'Land');
 
 -- The master user is NOT seeded here. After importing this schema, open
 --   https://www.viprarealty.com/admin/install.php

@@ -56,16 +56,7 @@ function dbMessage(e) {
     default:
       msg = 'Database error (' + (code || (e && e.message) || 'unknown') + '). Check the DB_HOST, DB_NAME, DB_USER and DB_PASS environment variables in Hostinger.';
   }
-  // Surface what the app is actually sending, to diagnose. Shows the exact
-  // user@host MySQL saw and whether a password was supplied. The app also
-  // reports the DB_HOST/DB_NAME it loaded (password never shown).
-  const seen = [];
-  if (e && e.sqlMessage) seen.push('server: ' + e.sqlMessage);
-  seen.push('app sent DB_HOST=' + (process.env.DB_HOST || '(unset→localhost)') +
-            ', DB_NAME=' + (process.env.DB_NAME || '(unset)') +
-            ', DB_USER=' + (process.env.DB_USER || '(unset)') +
-            ', DB_PASS=' + (process.env.DB_PASS ? 'set(' + process.env.DB_PASS.length + ' chars)' : '(unset)'));
-  return msg + '  —  [' + seen.join(' | ') + ']';
+  return msg;
 }
 
 module.exports = { ensureSchema, dbMessage };

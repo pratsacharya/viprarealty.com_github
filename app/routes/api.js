@@ -94,10 +94,19 @@ router.get('/listings', async (req, res) => {
     where.push('(p.project_title LIKE ? OR p.locality LIKE ? OR p.description LIKE ?)');
     const like = '%' + req.query.q + '%'; args.push(like, like, like);
   }
+  // Budget: monthly rent for Rent listings, sale price for Buy listings
+  const priceExpr = "CASE WHEN p.search_type='Buy' THEN p.sale_price ELSE p.monthly_rent END";
+  const minP = parseInt(req.query.min_price, 10), maxP = parseInt(req.query.max_price, 10);
+  if (minP > 0) { where.push(`${priceExpr} >= ?`); args.push(minP); }
+  if (maxP > 0) { where.push(`${priceExpr} <= ?`); args.push(maxP); }
+  const order = {
+    price_asc: `${priceExpr} IS NULL, ${priceExpr} ASC`,
+    price_desc: `${priceExpr} DESC`,
+  }[req.query.sort] || 'p.featured DESC, p.created_at DESC';
   const [rows] = await pool.query(
     `SELECT p.*, c.name category, s.name sub_category FROM properties p
      LEFT JOIN categories c ON c.id=p.category_id LEFT JOIN sub_categories s ON s.id=p.sub_category_id
-     WHERE ${where.join(' AND ')} ORDER BY p.featured DESC, p.created_at DESC LIMIT 200`, args);
+     WHERE ${where.join(' AND ')} ORDER BY ${order} LIMIT 200`, args);
   for (const r of rows) {
     const [imgs] = await pool.query('SELECT file_path FROM property_images WHERE property_id=? ORDER BY sort_order', [r.id]);
     r.images = imgs.map((i) => i.file_path);

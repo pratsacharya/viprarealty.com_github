@@ -194,6 +194,20 @@
       // enquire link carries the property id
       var enq = document.getElementById('d-enquire');
       if (enq) enq.href = 'contact.html?property_id=' + l.id;
+      // EMI calculator: only for sale (Buy) listings, prefilled with this property
+      var emiWrap = document.getElementById('emi-detail');
+      if (emiWrap) {
+        if (l.search_type === 'Buy' && Number(l.sale_price) > 0) {
+          emiWrap.style.display = '';
+          var pvEl = document.getElementById('emi-pv');
+          var dpEl = document.getElementById('emi-dp');
+          if (pvEl) pvEl.value = Number(l.sale_price).toLocaleString('en-IN');
+          if (dpEl) dpEl.value = Number(l.down_payment || 0).toLocaleString('en-IN');
+          if (pvEl) pvEl.dispatchEvent(new Event('input', { bubbles: true }));
+        } else {
+          emiWrap.style.display = 'none';
+        }
+      }
       // similar
       getListings({ category: l.category }).then(function (sd) {
         var sim = (sd.listings || []).filter(function (x) { return x.id != l.id; }).slice(0, 3);

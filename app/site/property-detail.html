@@ -139,10 +139,33 @@
           Chat on WhatsApp
         </a>
 
-        <div style="background: #F6F7FA; border-radius: 12px; padding: 16px;">
-          <div style="font-size: 13px; color: #8A93A1; margin-bottom: 4px;">Estimated EMI</div>
-          <div style="font-size: 20px; font-weight: 700; color: #151922;">₹2.92 L<span style="font-size: 13px; font-weight: 500; color: #8A93A1;">/mo</span></div>
-          <a href="index.html" style="font-size: 13px; color: #6B4BC9; font-weight: 600;">Open EMI calculator →</a>
+        <div id="emi-detail" style="display: none; background: #F6F7FA; border-radius: 12px; padding: 16px;">
+          <div style="font-size: 14px; font-weight: 700; color: #151922; margin-bottom: 12px;">EMI Calculator</div>
+          <label style="display: block; font-size: 12px; font-weight: 600; color: #5A6472; margin-bottom: 10px;">Property Value (₹)
+            <input type="text" id="emi-pv" inputmode="numeric" style="margin-top: 6px; width: 100%; padding: 10px; border: 1px solid #DFE3EA; border-radius: 9px; font-size: 14px; color: #151922; font-family: inherit; box-sizing: border-box;">
+          </label>
+          <label style="display: block; font-size: 12px; font-weight: 600; color: #5A6472; margin-bottom: 10px;">Down Payment (₹)
+            <input type="text" id="emi-dp" inputmode="numeric" style="margin-top: 6px; width: 100%; padding: 10px; border: 1px solid #DFE3EA; border-radius: 9px; font-size: 14px; color: #151922; font-family: inherit; box-sizing: border-box;">
+          </label>
+          <label style="display: block; font-size: 12px; font-weight: 600; color: #5A6472; margin-bottom: 10px;">Loan Amount (₹)
+            <input type="text" id="emi-loan" readonly aria-label="Loan amount, auto calculated" style="margin-top: 6px; width: 100%; padding: 10px; border: 1px solid #DFE3EA; border-radius: 9px; font-size: 14px; color: #151922; font-family: inherit; background: #EFF1F4; box-sizing: border-box;">
+          </label>
+          <label style="display: block; font-size: 12px; font-weight: 600; color: #5A6472; margin-bottom: 10px;">Interest rate (%)
+            <input type="text" id="emi-rate" value="8.5" inputmode="decimal" style="margin-top: 6px; width: 100%; padding: 10px; border: 1px solid #DFE3EA; border-radius: 9px; font-size: 14px; color: #151922; font-family: inherit; box-sizing: border-box;">
+          </label>
+          <label style="display: block; font-size: 12px; font-weight: 600; color: #5A6472; margin-bottom: 14px;">Tenure
+            <div style="margin-top: 6px; display: flex; gap: 6px;">
+              <input type="text" id="emi-tenure" value="20" aria-label="Tenure value" style="flex: 1 1 auto; min-width: 0; padding: 10px; border: 1px solid #DFE3EA; border-radius: 9px; font-size: 14px; color: #151922; font-family: inherit; box-sizing: border-box;">
+              <div style="display: inline-flex; border: 1px solid #DFE3EA; border-radius: 9px; overflow: hidden;">
+                <button type="button" id="emi-yrs" style="font-family: inherit; cursor: pointer; border: none; background: #6B4BC9; color: #fff; font-size: 12px; font-weight: 600; padding: 0 12px;">Yrs</button>
+                <button type="button" id="emi-mos" style="font-family: inherit; cursor: pointer; border: none; background: #fff; color: #43506A; font-size: 12px; font-weight: 600; padding: 0 12px;">Mos</button>
+              </div>
+            </div>
+          </label>
+          <div style="background: #fff; border: 1px solid #ECEEF2; border-radius: 10px; padding: 14px; display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 13px; color: #5A6472;">Monthly EMI</span>
+            <span id="emi-out" style="font-size: 22px; font-weight: 700; color: #6B4BC9; font-family: 'Poppins', sans-serif;">₹0</span>
+          </div>
         </div>
       </div>
 

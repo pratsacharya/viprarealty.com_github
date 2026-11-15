@@ -83,7 +83,8 @@ router.post('/verify-otp', async (req, res) => {
 
 // Public read API for the front-end
 router.get('/listings', async (req, res) => {
-  const where = ["p.status='active'"]; const args = [];
+  // Public listings: active plus sold-out / rented-out (shown with a badge). Inactive stays hidden.
+  const where = ["p.status IN ('active','sold_out','rented_out')"]; const args = [];
   const eq = { search_type: 'p.search_type', city: 'p.city' };
   for (const [k, col] of Object.entries(eq)) if (req.query[k]) { where.push(`${col}=?`); args.push(req.query[k]); }
   if (req.query.category) { where.push('c.name=?'); args.push(req.query.category); }
@@ -102,7 +103,7 @@ router.get('/listings', async (req, res) => {
   const order = {
     price_asc: `${priceExpr} IS NULL, ${priceExpr} ASC`,
     price_desc: `${priceExpr} DESC`,
-  }[req.query.sort] || 'p.featured DESC, p.created_at DESC';
+  }[req.query.sort] || "(p.status='active') DESC, p.featured DESC, p.created_at DESC";
   const [rows] = await pool.query(
     `SELECT p.*, c.name category, s.name sub_category FROM properties p
      LEFT JOIN categories c ON c.id=p.category_id LEFT JOIN sub_categories s ON s.id=p.sub_category_id

@@ -163,32 +163,40 @@
       <div style="flex: 1 1 420px; min-width: 0;">
         <span style="display: inline-block; background: #DFF4F2; color: #1E9A91; font-weight: 600; font-size: 13px; padding: 7px 14px; border-radius: 999px;">HOME LOANS</span>
         <h2 style="font-size: 30px; font-weight: 700; color: #151922; margin: 18px 0 14px;">Plan your EMI before you decide</h2>
-        <p style="font-size: 16px; color: #5A6472; line-height: 1.6; margin-bottom: 18px;">Enter the loan amount, interest rate and tenure to estimate your monthly premium instantly. We are channel partners with all major banks — contact us for a hassle-free, speedy loan process.</p>
+        <p style="font-size: 16px; color: #5A6472; line-height: 1.6; margin-bottom: 18px;">Enter the property value, down payment, interest rate and tenure to estimate your monthly premium instantly. We are channel partners with all major banks — contact us for a hassle-free, speedy loan process.</p>
         <a class="btn-ghost" href="contact.html" style="display: inline-block; border: 1.5px solid #D6DAE2; color: #151922; padding: 13px 22px; border-radius: 11px; font-weight: 600; font-size: 15px;">Talk to a loan expert</a>
       </div>
       <div style="flex: 1 1 380px; min-width: 0;">
         <div style="border: 1px solid #ECEEF2; border-radius: 16px; padding: 28px; background: #F9FAFB; box-shadow: 0 10px 30px rgba(21,25,34,0.05);">
           <h3 style="font-size: 17px; font-weight: 600; color: #151922; margin-bottom: 20px;">EMI Calculator</h3>
-          <label style="display: block; font-size: 13px; font-weight: 600; color: #5A6472; margin-bottom: 18px;">Loan amount
-            <input type="text" value="₹ 40,00,000" style="margin-top: 8px; width: 100%; padding: 12px; border: 1px solid #DFE3EA; border-radius: 10px; font-size: 15px; color: #151922; font-family: inherit;">
+          <div style="display: flex; gap: 14px; margin-bottom: 16px;">
+            <label style="flex: 1; min-width: 0; font-size: 13px; font-weight: 600; color: #5A6472;">Property Value (₹)
+              <input type="text" id="emi-pv" value="50,00,000" inputmode="numeric" style="margin-top: 8px; width: 100%; padding: 12px; border: 1px solid #DFE3EA; border-radius: 10px; font-size: 15px; color: #151922; font-family: inherit; box-sizing: border-box;">
+            </label>
+            <label style="flex: 1; min-width: 0; font-size: 13px; font-weight: 600; color: #5A6472;">Down Payment (₹)
+              <input type="text" id="emi-dp" value="10,00,000" inputmode="numeric" style="margin-top: 8px; width: 100%; padding: 12px; border: 1px solid #DFE3EA; border-radius: 10px; font-size: 15px; color: #151922; font-family: inherit; box-sizing: border-box;">
+            </label>
+          </div>
+          <label style="display: block; font-size: 13px; font-weight: 600; color: #5A6472; margin-bottom: 16px;">Loan Amount (₹)
+            <input type="text" id="emi-loan" value="" readonly aria-label="Loan amount, auto calculated" style="margin-top: 8px; width: 100%; padding: 12px; border: 1px solid #DFE3EA; border-radius: 10px; font-size: 15px; color: #151922; font-family: inherit; background: #EFF1F4; box-sizing: border-box;">
           </label>
           <div style="display: flex; gap: 14px; margin-bottom: 18px;">
-            <label style="flex: 1; font-size: 13px; font-weight: 600; color: #5A6472;">Interest rate
-              <input type="text" value="8.5 %" style="margin-top: 8px; width: 100%; padding: 12px; border: 1px solid #DFE3EA; border-radius: 10px; font-size: 15px; color: #151922; font-family: inherit;">
+            <label style="flex: 1; min-width: 0; font-size: 13px; font-weight: 600; color: #5A6472;">Interest rate (%)
+              <input type="text" id="emi-rate" value="8.5" inputmode="decimal" style="margin-top: 8px; width: 100%; padding: 12px; border: 1px solid #DFE3EA; border-radius: 10px; font-size: 15px; color: #151922; font-family: inherit; box-sizing: border-box;">
             </label>
-            <label style="flex: 1; font-size: 13px; font-weight: 600; color: #5A6472;">Tenure
+            <label style="flex: 1; min-width: 0; font-size: 13px; font-weight: 600; color: #5A6472;">Tenure
               <div style="margin-top: 8px; display: flex; gap: 8px;">
-                <input type="text" value="20" aria-label="Tenure value" style="flex: 1 1 auto; min-width: 0; padding: 12px; border: 1px solid #DFE3EA; border-radius: 10px; font-size: 15px; color: #151922; font-family: inherit;">
+                <input type="text" id="emi-tenure" value="20" aria-label="Tenure value" style="flex: 1 1 auto; min-width: 0; padding: 12px; border: 1px solid #DFE3EA; border-radius: 10px; font-size: 15px; color: #151922; font-family: inherit; box-sizing: border-box;">
                 <div style="display: inline-flex; border: 1px solid #DFE3EA; border-radius: 10px; overflow: hidden;">
-                  <button type="button" style="font-family: inherit; cursor: pointer; border: none; background: #6B4BC9; color: #fff; font-size: 13px; font-weight: 600; padding: 0 12px;">Yrs</button>
-                  <button type="button" style="font-family: inherit; cursor: pointer; border: none; background: #fff; color: #43506A; font-size: 13px; font-weight: 600; padding: 0 12px;">Mos</button>
+                  <button type="button" id="emi-yrs" style="font-family: inherit; cursor: pointer; border: none; background: #6B4BC9; color: #fff; font-size: 13px; font-weight: 600; padding: 0 12px;">Yrs</button>
+                  <button type="button" id="emi-mos" style="font-family: inherit; cursor: pointer; border: none; background: #fff; color: #43506A; font-size: 13px; font-weight: 600; padding: 0 12px;">Mos</button>
                 </div>
               </div>
             </label>
           </div>
           <div style="background: #fff; border: 1px solid #ECEEF2; border-radius: 12px; padding: 18px; display: flex; align-items: center; justify-content: space-between;">
             <span style="font-size: 14px; color: #5A6472;">Monthly EMI</span>
-            <span style="font-size: 26px; font-weight: 700; color: #6B4BC9; font-family: 'Poppins', sans-serif;">₹ 34,713</span>
+            <span id="emi-out" style="font-size: 26px; font-weight: 700; color: #6B4BC9; font-family: 'Poppins', sans-serif;">₹ 0</span>
           </div>
         </div>
       </div>

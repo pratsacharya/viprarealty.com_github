@@ -254,7 +254,43 @@
     });
   }
 
+  // ---------------- EMI calculator (home) ----------------
+  function initEMI() {
+    var pv = document.getElementById('emi-pv');
+    if (!pv) return;
+    var dp = document.getElementById('emi-dp');
+    var loan = document.getElementById('emi-loan');
+    var rate = document.getElementById('emi-rate');
+    var tenure = document.getElementById('emi-tenure');
+    var yrsBtn = document.getElementById('emi-yrs');
+    var mosBtn = document.getElementById('emi-mos');
+    var out = document.getElementById('emi-out');
+    var unit = 'yrs';
+    function numOf(el) { return parseFloat(String(el.value).replace(/[^0-9.]/g, '')) || 0; }
+    function inr0(n) { return '₹' + Math.round(n).toLocaleString('en-IN'); }
+    function setUnit(u) {
+      unit = u;
+      yrsBtn.style.background = u === 'yrs' ? '#6B4BC9' : '#fff';
+      yrsBtn.style.color = u === 'yrs' ? '#fff' : '#43506A';
+      mosBtn.style.background = u === 'mos' ? '#6B4BC9' : '#fff';
+      mosBtn.style.color = u === 'mos' ? '#fff' : '#43506A';
+    }
+    function calc() {
+      var P = Math.max(0, numOf(pv) - numOf(dp));
+      loan.value = P.toLocaleString('en-IN');
+      var n = numOf(tenure) * (unit === 'yrs' ? 12 : 1);
+      var r = numOf(rate) / 12 / 100;
+      var emi = 0;
+      if (P > 0 && n > 0) emi = r === 0 ? P / n : P * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+      out.textContent = inr0(emi);
+    }
+    [pv, dp, rate, tenure].forEach(function (el) { el.addEventListener('input', calc); });
+    yrsBtn.addEventListener('click', function () { setUnit('yrs'); calc(); });
+    mosBtn.addEventListener('click', function () { setUnit('mos'); calc(); });
+    setUnit('yrs'); calc();
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
-    initHome(); initProperties(); initDetail(); initContact();
+    initHome(); initProperties(); initDetail(); initContact(); initEMI();
   });
 })();

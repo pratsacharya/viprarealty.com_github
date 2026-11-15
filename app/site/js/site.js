@@ -284,10 +284,10 @@
     function inr0(n) { return '₹' + Math.round(n).toLocaleString('en-IN'); }
     function setUnit(u) {
       unit = u;
-      yrsBtn.style.background = u === 'yrs' ? '#6B4BC9' : '#fff';
-      yrsBtn.style.color = u === 'yrs' ? '#fff' : '#43506A';
-      mosBtn.style.background = u === 'mos' ? '#6B4BC9' : '#fff';
-      mosBtn.style.color = u === 'mos' ? '#fff' : '#43506A';
+      yrsBtn.style.background = u === 'yrs' ? '#6B4BC9' : '#E6E9EF';
+      yrsBtn.style.color = u === 'yrs' ? '#fff' : '#3A4356';
+      mosBtn.style.background = u === 'mos' ? '#6B4BC9' : '#E6E9EF';
+      mosBtn.style.color = u === 'mos' ? '#fff' : '#3A4356';
     }
     function calc() {
       var P = Math.max(0, numOf(pv) - numOf(dp));

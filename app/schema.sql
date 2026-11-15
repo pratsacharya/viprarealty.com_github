@@ -27,12 +27,9 @@ CREATE TABLE IF NOT EXISTS sub_categories (
 
 CREATE TABLE IF NOT EXISTS properties (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  builder_name VARCHAR(190) NULL,
   project_title VARCHAR(190) NULL,
-  building_name VARCHAR(190) NULL,
   description TEXT NULL,
   search_type ENUM('Rent','Buy') NOT NULL,
-  listing_type ENUM('Resale','Under Construction','') NOT NULL DEFAULT '',
   category_id INT NULL,
   sub_category_id INT NULL,
   city VARCHAR(80) NULL,

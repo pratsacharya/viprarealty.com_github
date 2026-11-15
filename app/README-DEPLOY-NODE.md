@@ -19,7 +19,7 @@ routes/
   admin.js             login, dashboard, properties CRUD + image upload, CSV import, enquiries, users, change-password, install
   api.js               POST /api/enquiry, POST /api/verify-otp, GET /api/listings
 views/                 EJS templates (+ partials/header, partials/footer)
-public/adminvr.css       admin styling (served at /public/adminvr.css)
+public/admin.css       admin styling (served at /public/admin.css)
 uploads/               property images are written here
 ```
 
@@ -33,7 +33,14 @@ and the APIs under `/api/...`.
 
 ### 1. Create the database
 hPanel → **Databases → MySQL Databases**: create a database + user (strong password), grant all
-privileges. Then **phpMyAdmin → Import → `schema.sql` → Go** (creates tables + seeds categories).
+privileges. **No manual SQL import is needed** — the app auto-creates all tables and seeds the category
+tree on first run (and when you open `/adminvr/install`). Importing `schema.sql` in phpMyAdmin is
+optional.
+
+> **Hostinger name prefix:** the DB and user names you create are auto-prefixed with your account id
+> (e.g. you type `viprarealty_d` → the real name is `u707964325_viprarealty_d`). In step 4 the
+> `DB_NAME` / `DB_USER` env vars must use the **full prefixed** names shown on the MySQL Databases page,
+> or the app gets `ER_ACCESS_DENIED_ERROR`.
 
 ### 2. Create the Node.js application
 hPanel → **Advanced → Node.js** (Setup Node.js App):
@@ -71,8 +78,11 @@ Until then the 4-digit OTP is generated and stored but not texted (`src/mailer.j
 
 ## B. GitHub
 
-Repo: `https://github.com/pratsacharya/viprarealty.com_github.git`
-`.env` and `node_modules/` and uploaded images are git-ignored.
+Repo: `https://github.com/pratsacharya/viprarealty.com_github.git` (branch `main`).
+Hostinger's Git deployment must point at **this** repo — not the old `…_github-cloned` repo, which was
+wrongly connected earlier. With **auto-deploy on push** enabled, every push to `main` redeploys; static
+`site/` changes need the deploy to pull the files, and env-var changes need an app **Restart**.
+`.env`, `node_modules/`, and uploaded images are git-ignored.
 
 ```bash
 git init

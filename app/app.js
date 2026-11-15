@@ -48,8 +48,10 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log('Vipra Realty admin running on port ' + PORT));
 
-// Reconcile the category/sub-category tree to the canonical list on startup.
+// On startup: drop retired columns, then reconcile the category tree.
 // Non-fatal: if the DB isn't reachable yet, log and carry on.
-require('./src/bootstrap').ensureCategoryTree()
-  .then(() => console.log('Category tree reconciled'))
-  .catch((e) => console.error('Category tree reconcile skipped:', e.code || e.message));
+const _boot = require('./src/bootstrap');
+_boot.dropLegacyColumns()
+  .then(() => _boot.ensureCategoryTree())
+  .then(() => console.log('Schema migrations + category tree reconciled'))
+  .catch((e) => console.error('Startup DB maintenance skipped:', e.code || e.message));

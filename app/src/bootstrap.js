@@ -38,6 +38,26 @@ async function ensureSchema() {
   await ensureCategoryTree();
 }
 
+// Drop columns retired from the data model, if they still exist on the live
+// properties table. Idempotent: checks information_schema first (MySQL has no
+// DROP COLUMN IF EXISTS), so it ALTERs once and then no-ops forever after.
+async function dropLegacyColumns() {
+  const legacy = ['listing_type', 'builder_name', 'building_name'];
+  const conn = await pool.getConnection();
+  try {
+    for (const col of legacy) {
+      const [[{ n }]] = await conn.query(
+        "SELECT COUNT(*) n FROM information_schema.COLUMNS " +
+          "WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='properties' AND COLUMN_NAME=?",
+        [col]
+      );
+      if (n > 0) await conn.query('ALTER TABLE properties DROP COLUMN `' + col + '`');
+    }
+  } finally {
+    conn.release();
+  }
+}
+
 // Reconcile the live categories/sub-categories to CATEGORY_TREE:
 // add any missing, and remove any that are no longer in the tree AND not
 // referenced by a property. Idempotent — safe to run on every startup.
@@ -95,4 +115,4 @@ function dbMessage(e) {
   return msg;
 }
 
-module.exports = { ensureSchema, dbMessage, ensureCategoryTree, CATEGORY_TREE };
+module.exports = { ensureSchema, dbMessage, ensureCategoryTree, dropLegacyColumns, CATEGORY_TREE };

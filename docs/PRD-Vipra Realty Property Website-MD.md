@@ -47,14 +47,14 @@ Three user types interact with the system. Only admin roles authenticate; seeker
 | Role | Access | Who | What they do |
 | --- | --- | --- | --- |
 | **Property seeker** | Public, no login | HNIs, NRIs, families, businesses | Browse listings, use EMI calculator, submit OTP-verified enquiries, chat on WhatsApp |
-| **Master user** | `/admin`, email + password | Owner (24vipra@gmail.com) | Full control: listing CRUD, status changes, bulk import, create/delete sub-users, reporting |
-| **Sub user** | `/admin`, email + temp password | Staff added by master | Read and **add** listings only — cannot set inactive / sold out / rented out; must change password on first login |
+| **Master user** | `/adminvr`, email + password | Owner (24vipra@gmail.com) | Full control: listing CRUD, status changes, bulk import, create/delete sub-users, reporting |
+| **Sub user** | `/adminvr`, email + temp password | Staff added by master | Read and **add** listings only — cannot set inactive / sold out / rented out; must change password on first login |
 
-There is exactly **one master user** with full rights. The master creates sub-users by entering their email and a temporary password; the system emails the sub-user their temp password and the `/admin` link. Sub-users change their own password after first login, and the master can delete a sub-user at any time.
+There is exactly **one master user** with full rights. The master creates sub-users by entering their email and a temporary password; the system emails the sub-user their temp password and the `/adminvr` link. Sub-users change their own password after first login, and the master can delete a sub-user at any time.
 
 ## Site map & information architecture
 
-Four public pages, plus the gated admin panel at `/admin`.
+Four public pages, plus the gated admin panel at `/adminvr`.
 
 1. **Home** — brand intro, featured / recent listings, search entry (type + category), EMI calculator teaser, company profile, bank-partner note, a brokerage fee structure, enquiry and WhatsApp.
 2. **Properties** — listing grid filterable by search type (Rent / Buy), category (Residential / Commercial) and sub-category; each card links to a detail page.
@@ -62,7 +62,7 @@ Four public pages, plus the gated admin panel at `/admin`.
 3. **Contact Us** — phone +91 91085 98918, enquiry@viprarealty.com, office at 19 Ambalipura, Sarjapur Road, Bangalore 562125, enquiry form and WhatsApp.
 4. **Privacy Policy** — data handling, OTP/SMS consent, cookies.
 
-**`/admin`** (gated) — login, listings management (add / edit / status / images / pricing / history), Excel import, user management (master only), reporting.
+**`/adminvr`** (gated) — login, listings management (add / edit / status / images / pricing / history), Excel import, user management (master only), reporting.
 
 Global elements on every page: logo (image only, no wordmark), primary nav, floating WhatsApp widget, footer with contact and privacy link.
 
@@ -109,7 +109,7 @@ OTP delivery and the thank-you SMS go through an SMS gateway (e.g. MSG91 or Twil
 
 ## EMI calculator & bank partners
 
-A client-side EMI calculator lets seekers estimate a monthly premium. Inputs: loan amount, interest rate (annual %), and tenure entered in years or months, with a unit toggle to switch between the two. Output: the monthly EMI, updated live.
+A client-side EMI calculator lets seekers estimate a monthly premium. Inputs: **property value**, **down payment**, **interest rate** (annual %), and **tenure** entered in years or months with a Yrs/Mths unit toggle. The **loan amount is auto-calculated** as property value minus down payment (shown read-only). Output: the monthly EMI, updated live on every change. The calculator is on the home page and, for **sale (Buy) listings**, embedded on the property detail page pre-filled with that property's price and down payment.
 
 It uses the standard reducing-balance formula:
 
@@ -117,13 +117,13 @@ It uses the standard reducing-balance formula:
 EMI = P · r · (1 + r)^n / ((1 + r)^n − 1)
 ```
 
-where P is the principal, r the monthly interest rate (annual rate / 12 / 100), and n the tenure in months.
+where P is the loan amount (principal), r the monthly interest rate (annual rate / 12 / 100), and n the tenure in months. If the interest rate is 0, EMI falls back to P / n.
 
 Alongside the calculator, a short note positions Vipra Realty as a loan facilitator: "We are channel partners with all major banks. Contact us for your loan requirement — hassle-free and speedy loan process." The calculator is informational only; it does not submit or store anything.
 
 ## Admin panel — roles, permissions & capabilities
 
-The admin panel lives at `/admin` and authenticates with email + password. It can be a separate interface or the front-end extended with an admin role. The master password is set securely at first login / deployment, never stored in documentation.
+The admin panel lives at `/adminvr` and authenticates with email + password. It can be a separate interface or the front-end extended with an admin role. The master password is set securely at first login / deployment, never stored in documentation.
 
 Capabilities by role:
 
@@ -155,20 +155,18 @@ All fields below are controlled from the admin panel. Categories and sub-categor
 
 | Category | Sub-categories |
 | --- | --- |
-| Residential | Flats, Villas, Independent House, Independent Plots |
-| Commercial | Office Space, Retail Store, Warehouse, Land, Others |
+| Residential | Flats, Villas, Pent House, Independent House, Independent Plots |
+| Commercial | Office Space, Retail Store, Warehouse, Land |
 
-**Buy** has two listing types — **Resale** and **Under Construction project** — each covering both the **Residential** and **Commercial** categories. **Rent** has two options directly: **Residential** and **Commercial**.
+Listings are classified by **Search type (Rent / Buy)** plus **Category → Sub-category**. Both Rent and Buy cover the Residential and Commercial categories and their sub-categories. In the admin form and the public filters the Sub-category list **cascades** from the selected Category. The category tree is the single source of truth in code (`CATEGORY_TREE` in `app/src/bootstrap.js`) and is reconciled into the database on startup.
 
-Tree: Buy → Resale / Under Construction → Residential / Commercial; Rent → Residential / Commercial.
+> Note: an earlier design had a **Listing type (Resale / Under Construction)** dimension under Buy. This was **removed** — classification is now Search type + Category/Sub-category only.
 
 **Core listing fields** (per property)
 
 | Field | Notes |
 | --- | --- |
-| Builder name | |
-| Project title | |
-| Building name | |
+| Property title | Single headline for the listing (replaced the earlier Builder name / Project title / Building name fields) |
 | Brief description | |
 | Sale price | For sale listings |
 | Monthly rent | Residential & commercial rentals |
@@ -210,7 +208,7 @@ Deliverables for this phase include wireframes and mockups for the homepage, lis
 
 A React front-end calls a REST API, which owns all data in MySQL and local image storage and talks to the SMS gateway and email. WhatsApp is reached directly from the browser via a wa.me link, bypassing the backend.
 
-- **Clients** — property seeker (web) and the admin panel at `/admin`.
+- **Clients** — property seeker (web) and the admin panel at `/adminvr`.
 - **Frontend** — React SPA (responsive, SEO-friendly URLs and meta tags).
 - **Backend** — REST API (Node/Express or Laravel): Auth (JWT/session), Property CRUD, OTP verify, Enquiry capture, Excel bulk import, logging.
 - **Data** — MySQL database and local image storage.
@@ -276,7 +274,7 @@ Confirmed with the client (assumptions noted where still open):
 - **Sub-user reporting** — confirmed: reporting & analytics are **master-only**; sub-users see none.
 - **Enquiry alerts** — confirmed: on each enquiry the team gets an **email to the master mailbox and a WhatsApp alert**.
 - **Featured listings on Home** — confirmed: **most recent + a master "featured" flag** on a listing.
-- **Excel import template** — provided: a template with all property header fields (builder, project, search type, listing type, category, sub-category, city, pricing, area, status, images, featured).
+- **Excel import template** — provided. Header fields: property title, brief description, search type, category, sub-category, city, locality, pricing (sale / rent / deposit / down payment), area, status, images, featured. (The shipped template file still reflects the earlier Builder/Project/Building + listing-type columns and is pending regeneration; the importer already accepts a single "Property Title" and ignores retired columns.)
 - **Backend framework** — Node.js/Express or PHP Laravel, chosen by the dev team (Hostinger shared hosting may favour PHP).
 - **Brokerage info** — confirmed: the brokerage fee structure is **published on the Home page**.
 - **Analytics depth** — confirmed: basic reporting = **listing counts, enquiry trends, and top properties**.

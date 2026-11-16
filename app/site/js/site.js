@@ -317,14 +317,43 @@
         else g.innerHTML = imgs.slice(0, 3).map(function (src) {
           return '<div><img src="' + esc(imgSrc(src)) + '" alt="" loading="lazy"></div>';
         }).join('');
-        // every tile opens the full-screen viewer at its photo
+        // The large photo slides through all photos in place (arrows, swipe); the
+        // side tiles follow with the next two. Any tile opens the full-screen viewer.
         if (imgs.length) {
-          g.insertAdjacentHTML('beforeend', '<button type="button" class="gallery-all">View all ' + imgs.length + ' photo' + (imgs.length > 1 ? 's' : '') + '</button>');
-          Array.prototype.forEach.call(g.querySelectorAll(':scope > div'), function (tile, i) {
+          var n = imgs.length, cur = 0;
+          var tiles = Array.prototype.slice.call(g.querySelectorAll(':scope > div'));
+          var paint = function () {
+            tiles.forEach(function (tile, i) {
+              var im = tile.querySelector('img'), src = imgSrc(imgs[(cur + i) % n]);
+              if (im.getAttribute('src') !== src) im.src = src;
+            });
+            var c = g.querySelector('.gallery-count'); if (c) c.textContent = (cur + 1) + ' / ' + n;
+          };
+          var slide = function (d) { cur = (cur + d + n) % n; paint(); };
+          tiles.forEach(function (tile, i) {
             tile.classList.add('is-zoom');
-            tile.addEventListener('click', function () { openViewer(imgs, i, title); });
+            tile.addEventListener('click', function () { openViewer(imgs, (cur + i) % n, title); });
           });
-          g.querySelector('.gallery-all').addEventListener('click', function () { openViewer(imgs, 0, title); });
+          if (n > 1) {
+            var big = tiles[0];
+            big.insertAdjacentHTML('beforeend',
+              '<button type="button" class="gallery-nav gallery-prev" aria-label="Previous photo">&#8249;</button>' +
+              '<button type="button" class="gallery-nav gallery-next" aria-label="Next photo">&#8250;</button>' +
+              '<span class="gallery-count" aria-live="polite">1 / ' + n + '</span>');
+            big.querySelector('.gallery-prev').addEventListener('click', function (e) { e.stopPropagation(); slide(-1); });
+            big.querySelector('.gallery-next').addEventListener('click', function (e) { e.stopPropagation(); slide(1); });
+            var gx = null, swiped = false;
+            big.addEventListener('touchstart', function (e) { gx = e.touches[0].clientX; swiped = false; }, { passive: true });
+            big.addEventListener('touchend', function (e) {
+              if (gx == null) return;
+              var dx = e.changedTouches[0].clientX - gx; gx = null;
+              if (Math.abs(dx) > 40) { swiped = true; slide(dx < 0 ? 1 : -1); }
+            });
+            // a swipe must not also count as a tap that opens the viewer
+            big.addEventListener('click', function (e) { if (swiped) { e.stopImmediatePropagation(); swiped = false; } }, true);
+          }
+          g.insertAdjacentHTML('beforeend', '<button type="button" class="gallery-all">View all ' + n + ' photo' + (n > 1 ? 's' : '') + '</button>');
+          g.querySelector('.gallery-all').addEventListener('click', function () { openViewer(imgs, cur, title); });
         }
       }
       // key details

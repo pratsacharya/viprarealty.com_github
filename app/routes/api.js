@@ -2,6 +2,7 @@ const express = require('express');
 const crypto = require('crypto');
 const pool = require('../src/db');
 const { sendSms, notifyMasterEnquiry } = require('../src/mailer');
+const { isMissing } = require('../src/uploads');
 
 const router = express.Router();
 
@@ -110,7 +111,8 @@ router.get('/listings', async (req, res) => {
      WHERE ${where.join(' AND ')} ORDER BY ${order} LIMIT 200`, args);
   for (const r of rows) {
     const [imgs] = await pool.query('SELECT file_path FROM property_images WHERE property_id=? ORDER BY sort_order', [r.id]);
-    r.images = imgs.map((i) => i.file_path);
+    // skip records whose file is gone, so a dead photo never becomes the card image
+    r.images = imgs.map((i) => i.file_path).filter((f) => !isMissing(f));
   }
   res.json({ count: rows.length, listings: rows });
 });

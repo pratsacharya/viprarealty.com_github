@@ -25,7 +25,7 @@ const router = express.Router();
       : h));
 });
 
-const { UPLOAD_DIR, diskPath } = require('../src/uploads');
+const { UPLOAD_DIR, diskPath, isLocal, isMissing } = require('../src/uploads');
 
 const OK_EXT = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
 const storage = multer.diskStorage({
@@ -137,9 +137,33 @@ router.get('/properties/:id/feature', requireMaster, checkCsrf, async (req, res)
 router.get('/properties/:id/delete', requireMaster, checkCsrf, async (req, res) => {
   const id = +req.params.id;
   const [imgs] = await pool.query('SELECT file_path FROM property_images WHERE property_id=?', [id]);
-  for (const r of imgs) { const f = diskPath(r.file_path); if (fs.existsSync(f)) fs.unlinkSync(f); }
+  for (const r of imgs) removeFile(r.file_path);
   await pool.query('DELETE FROM properties WHERE id=?', [id]);
   res.redirect('/adminvr/properties');
+});
+
+// ---------- photos of one property (master) ----------
+function removeFile(filePath) {
+  if (!isLocal(filePath)) return;
+  try { fs.unlinkSync(diskPath(filePath)); } catch (e) {}
+}
+// remove one photo
+router.get('/properties/:id/images/:imgId/delete', requireMaster, checkCsrf, async (req, res) => {
+  const id = +req.params.id;
+  const [rows] = await pool.query('SELECT id, file_path FROM property_images WHERE id=? AND property_id=?', [+req.params.imgId, id]);
+  if (rows[0]) {
+    removeFile(rows[0].file_path);
+    await pool.query('DELETE FROM property_images WHERE id=?', [rows[0].id]);
+  }
+  res.redirect('/adminvr/property-edit?id=' + id);
+});
+// remove every photo record whose file no longer exists on the server
+router.get('/properties/:id/images/prune', requireMaster, checkCsrf, async (req, res) => {
+  const id = +req.params.id;
+  const [rows] = await pool.query('SELECT id, file_path FROM property_images WHERE property_id=?', [id]);
+  const dead = rows.filter((r) => isMissing(r.file_path)).map((r) => r.id);
+  if (dead.length) await pool.query('DELETE FROM property_images WHERE id IN (?)', [dead]);
+  res.redirect('/adminvr/property-edit?id=' + id);
 });
 
 // ---------- add / edit ----------
@@ -160,14 +184,15 @@ router.get('/property-edit', async (req, res) => {
   const id = +(req.query.id || 0);
   if (id && req.session.user.role !== 'master') return res.status(403).send('Editing is master-only.');
   let p = { search_type: 'Rent', status: 'active', featured: 0 };
-  let imgCount = 0;
+  let images = [];
   if (id) {
     const [rows] = await pool.query('SELECT * FROM properties WHERE id=?', [id]);
     if (!rows[0]) return res.status(404).send('Not found.');
     p = rows[0];
-    imgCount = (await pool.query('SELECT COUNT(*) n FROM property_images WHERE property_id=?', [id]))[0][0].n;
+    const [imgs] = await pool.query('SELECT id, file_path FROM property_images WHERE property_id=? ORDER BY sort_order, id', [id]);
+    images = imgs.map((i) => ({ id: i.id, src: isLocal(i.file_path) ? '/' + i.file_path : i.file_path, missing: isMissing(i.file_path) }));
   }
-  res.render('property-form', { ...base(req), page: 'property-edit', ...(await loadFormData()), p, isEdit: !!id, imgCount, error: null });
+  res.render('property-form', { ...base(req), page: 'property-edit', ...(await loadFormData()), p, isEdit: !!id, images, error: null });
 });
 
 router.post('/property-edit', upload.array('images', 20), async (req, res) => {
@@ -191,7 +216,7 @@ router.post('/property-edit', upload.array('images', 20), async (req, res) => {
 
   if (!data.project_title) {
     (req.files || []).forEach((f) => { try { fs.unlinkSync(f.path); } catch (e) {} });
-    return res.render('property-form', { ...base(req), page: 'property-edit', ...(await loadFormData()), p: { ...data }, isEdit: !!id, imgCount: 0, error: 'Enter a property title.' });
+    return res.render('property-form', { ...base(req), page: 'property-edit', ...(await loadFormData()), p: { ...data }, isEdit: !!id, images: [], error: 'Enter a property title.' });
   }
 
   let pid;

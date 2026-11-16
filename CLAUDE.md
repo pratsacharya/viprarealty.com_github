@@ -163,7 +163,10 @@ Data comes only from `/api/*`. Key pieces:
 (= `24vipra@gmail.com`), `ADMIN_WHATSAPP` (= `919108598918`). Optional, only for live OTP:
 `MSG91_AUTHKEY`, `MSG91_SENDER`.
 
-`UPLOAD_DIR` — folder for uploaded property images (`~` expands to the home folder). Unset = `app/uploads`.
+`UPLOAD_DIR` — folder for uploaded property images. A bare name or `~/name` resolves against the home
+folder (on Hostinger `/home/<account>/domains/viprarealty.com`), an absolute path is used as given, and an
+unusable folder falls back to `app/uploads`. Unset = `app/uploads`. On Hostinger the app folder is a
+per-deploy build directory (`.../hbuilds/versions/<id>/nodejs`), so nothing inside it survives a deploy.
 **Must be set on Hostinger to a path outside the app root** (e.g. `~/vipra-uploads`): a Git deploy
 replaces the app folder and wipes images stored inside it. Always resolve image files through
 `src/uploads.js` (`UPLOAD_DIR`, `diskPath`), never `path.join(__dirname, 'uploads')`.

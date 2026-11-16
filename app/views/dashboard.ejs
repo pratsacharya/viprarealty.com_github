@@ -20,6 +20,9 @@
 
 <% if (storage) { %>
 <h2>Photo storage</h2>
+<% if (storage.fallbackReason) { %>
+  <p class="note err"><%= storage.fallbackReason %>. Using the app folder instead.</p>
+<% } %>
 <% if (storage.insideApp) { %>
   <p class="note err">Photos are stored inside the app folder and will be deleted on the next deploy.
     Set the <code>UPLOAD_DIR</code> environment variable to a folder outside the app (e.g. <code>~/vipra-uploads</code>) and restart the app.</p>

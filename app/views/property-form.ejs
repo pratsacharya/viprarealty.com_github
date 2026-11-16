@@ -3,46 +3,78 @@
 <%- include('partials/header') %>
 <h1><%= isEdit ? 'Edit' : 'Add' %> property</h1>
 <% if (error) { %><p class="note err"><%= error %></p><% } %>
-<form method="post" action="/adminvr/property-edit<%= isEdit ? ('?id=' + p.id) : '' %>" enctype="multipart/form-data" style="max-width:760px">
+<form method="post" action="/adminvr/property-edit<%= isEdit ? ('?id=' + p.id) : '' %>" enctype="multipart/form-data" class="pform">
   <input type="hidden" name="csrf" value="<%= csrf %>">
-  <div class="row">
-    <label>Search type<select name="search_type">
-      <% ['Rent','Buy'].forEach(o => { %><option <%= v('search_type')===o?'selected':'' %>><%= o %></option><% }) %></select></label>
-    <label>Status<select name="status">
-      <% Object.entries({active:'Active',inactive:'Inactive',sold_out:'Sold out',rented_out:'Rented out'}).forEach(([k,lbl]) => { %>
-        <option value="<%= k %>" <%= v('status')===k?'selected':'' %>><%= lbl %></option><% }) %></select></label>
-  </div>
-  <div class="row">
-    <label>Category<select name="category_id"><option value="">—</option>
-      <% cats.forEach(c => { %><option value="<%= c.id %>" <%= String(v('category_id'))===String(c.id)?'selected':'' %>><%= c.name %></option><% }) %></select></label>
-    <label>Sub-category<select name="sub_category_id" id="sub_category_id"><option value="">—</option>
-      <% subs.forEach(s => { %><option value="<%= s.id %>" data-cat="<%= s.category_id %>" <%= String(v('sub_category_id'))===String(s.id)?'selected':'' %>><%= s.name %></option><% }) %></select></label>
-    <label>City<select name="city"><option value="">—</option>
-      <% cities.forEach(c => { %><option <%= v('city')===c?'selected':'' %>><%= c %></option><% }) %></select></label>
-    <label>Locality / area<input name="locality" value="<%= v('locality') %>"></label>
-  </div>
-  <label>Property title<input name="project_title" value="<%= v('project_title') %>" placeholder="e.g. 2 BHK Flat in Whitefield" required></label>
-  <label>Description<textarea name="description"><%= v('description') %></textarea></label>
-  <div class="row">
-    <label>Sale price (₹)<input name="sale_price" value="<%= v('sale_price') %>"></label>
-    <label>Monthly rent (₹)<input name="monthly_rent" value="<%= v('monthly_rent') %>"></label>
-    <label>Deposit (₹)<input name="deposit_amount" value="<%= v('deposit_amount') %>"></label>
-    <label>Down payment (₹)<input name="down_payment" value="<%= v('down_payment') %>"></label>
-  </div>
-  <div class="row">
-    <label>Possession date<input name="possession_date" value="<%= v('possession_date') %>" placeholder="DD-MM-YYYY or Immediate"></label>
-    <label>Bedrooms<input name="bedrooms" value="<%= v('bedrooms') %>"></label>
-    <label>Bathrooms<input name="bathrooms" value="<%= v('bathrooms') %>"></label>
-    <label>Carpet area (sq ft)<input name="carpet_area" value="<%= v('carpet_area') %>"></label>
-  </div>
-  <div class="row">
-    <label>Built-up / plot (sq ft)<input name="builtup_area" value="<%= v('builtup_area') %>"></label>
-    <label>Total floors<input name="total_floors" value="<%= v('total_floors') %>"></label>
-    <label>Floor no<input name="floor_no" value="<%= v('floor_no') %>"></label>
-    <label>Ceiling height (ft)<input name="ceiling_height" value="<%= v('ceiling_height') %>"></label>
-  </div>
-  <label style="display:flex;align-items:center;gap:8px;margin-top:14px"><input type="checkbox" name="featured" style="width:auto" <%= v('featured')?'checked':'' %>> Feature on Home page</label>
-  <label>Images (JPG/PNG/WebP, up to 20 total)<input type="file" name="images" accept="image/*" multiple></label>
+
+  <details class="sec" open>
+    <summary>Type and basics</summary>
+    <div class="row">
+      <label>Search type<select name="search_type" id="search_type">
+        <% ['Rent','Buy'].forEach(o => { %><option <%= v('search_type')===o?'selected':'' %>><%= o %></option><% }) %></select></label>
+      <label>Category<select name="category_id"><option value="">—</option>
+        <% cats.forEach(c => { %><option value="<%= c.id %>" <%= String(v('category_id'))===String(c.id)?'selected':'' %>><%= c.name %></option><% }) %></select></label>
+      <label>Sub-category<select name="sub_category_id" id="sub_category_id"><option value="">—</option></select></label>
+      <label>Status<select name="status">
+        <% Object.entries({active:'Active',inactive:'Inactive',sold_out:'Sold out',rented_out:'Rented out'}).forEach(([k,lbl]) => { %>
+          <option value="<%= k %>" <%= v('status')===k?'selected':'' %>><%= lbl %></option><% }) %></select></label>
+    </div>
+    <div class="row">
+      <label>City<select name="city"><option value="">—</option>
+        <% cities.forEach(c => { %><option <%= v('city')===c?'selected':'' %>><%= c %></option><% }) %></select></label>
+      <label>Locality / area<input name="locality" value="<%= v('locality') %>"></label>
+    </div>
+    <label>Property title<input name="project_title" value="<%= v('project_title') %>" placeholder="2 BHK Flat in Whitefield" required></label>
+    <label>About this property<textarea name="description" rows="5"><%= v('description') %></textarea></label>
+    <label class="check"><input type="checkbox" name="featured" <%= v('featured')?'checked':'' %>> Feature on Home page</label>
+  </details>
+
+  <details class="sec" open>
+    <summary>Price and possession</summary>
+    <div class="row">
+      <label>Sale price (₹)<input name="sale_price" value="<%= v('sale_price') %>"></label>
+      <label>Monthly rent (₹)<input name="monthly_rent" value="<%= v('monthly_rent') %>"></label>
+      <label>Deposit (₹)<input name="deposit_amount" value="<%= v('deposit_amount') %>"></label>
+      <label>Down payment (₹)<input name="down_payment" value="<%= v('down_payment') %>"></label>
+    </div>
+    <div class="row">
+      <label>Possession date<input name="possession_date" value="<%= v('possession_date') %>" placeholder="DD-MM-YYYY or Immediate"></label>
+    </div>
+  </details>
+
+  <details class="sec" open>
+    <summary>Highlights <span class="count" id="hl-count"></span></summary>
+    <p class="muted" id="hl-empty">Choose a sub-category to see its fields.</p>
+    <div id="hl-head" class="frow fhead" hidden><span>Field</span><span>Value</span><span>Show on site</span></div>
+    <div id="hl-rows"></div>
+    <p class="muted hint">Empty fields are not shown on the website. Untick "Show on site" to keep a value private.</p>
+  </details>
+
+  <details class="sec" open>
+    <summary>Common amenities <span class="count" id="am-count"></span></summary>
+    <p class="muted hint">Tick what the property has. The box is optional, for a number or note (for example 120 car parks).</p>
+    <div class="chips">
+      <% catalog.amenities.forEach(a => { const f = fv.amenity[a.key]; %>
+        <label class="chip"><input type="checkbox" name="am_on[<%= a.key %>]" value="1" <%= f ? 'checked' : '' %>>
+          <span><%= a.label %></span>
+          <input type="text" name="am[<%= a.key %>]" value="<%= f ? f.value : '' %>" aria-label="<%= a.label %> value" maxlength="60"></label>
+      <% }) %>
+    </div>
+  </details>
+
+  <details class="sec" open id="fu-sec" hidden>
+    <summary>Furnishings <span class="count" id="fu-count"></span></summary>
+    <p class="muted hint">Optional. Enter a count or note for each item provided, or leave blank and describe them in "About this property".</p>
+    <div class="chips">
+      <% catalog.furnishings.forEach(a => { const f = fv.furnishing[a.key]; %>
+        <label class="chip"><span><%= a.label %></span>
+          <input type="text" name="fu[<%= a.key %>]" value="<%= f ? f.value : '' %>" aria-label="<%= a.label %>" maxlength="60"></label>
+      <% }) %>
+    </div>
+  </details>
+
+  <details class="sec" open>
+    <summary>Photos <span class="count"><%= images.length %> of 20</span></summary>
+    <label>Add photos (JPG/PNG/WebP, up to 20 total)<input type="file" name="images" accept="image/*" multiple></label>
   <% if (images.length) { const dead = images.filter(i => i.missing).length; %>
     <p class="muted" style="margin-top:10px"><%= images.length %> of 20 photo(s) used. The first photo is the one shown on the listing card.</p>
     <% if (dead) { %>
@@ -58,29 +90,95 @@
       <% }) %>
     </div>
   <% } %>
-  <button class="btn" type="submit" style="margin-top:18px"><%= isEdit ? 'Save changes' : 'Add property' %></button>
+  </details>
+
+  <div class="savebar"><button class="btn" type="submit"><%= isEdit ? 'Save changes' : 'Add property' %></button>
+    <a class="btn ghost" href="/adminvr/properties">Cancel</a></div>
 </form>
 <script>
 (function () {
-  // Dependent Sub-category: show only the selected Category's sub-types.
-  var SUBS = [<% subs.forEach(function (s, i) { %><%- i ? ',' : '' %>{id:<%= s.id %>,cat:<%= s.category_id %>,name:<%- JSON.stringify(s.name) %>}<% }); %>];
+  var SUBS = <%- JSON.stringify(subs.map(s => ({ id: s.id, cat: s.category_id, name: s.name }))).replace(/</g, '\\u003c') %>;
+  var CATALOG = <%- JSON.stringify(catalog).replace(/</g, '\\u003c') %>;
+  var state = <%- JSON.stringify(fv.highlight).replace(/</g, '\\u003c') %>;   // key -> {value, display}
+  var $ = function (id) { return document.getElementById(id); };
   var catSel = document.querySelector('select[name="category_id"]');
-  var subSel = document.getElementById('sub_category_id');
-  if (!catSel || !subSel) return;
+  var subSel = $('sub_category_id'), typeSel = $('search_type');
   var current = '<%= v("sub_category_id") %>';
-  function fill() {
+
+  // Sub-category options follow the selected Category.
+  function fillSubs() {
     var cat = catSel.value;
     subSel.innerHTML = '<option value="">—</option>';
-    SUBS.filter(function (s) { return !cat || String(s.cat) === String(cat); })
-      .forEach(function (s) {
-        var o = document.createElement('option');
-        o.value = s.id; o.textContent = s.name;
-        if (String(s.id) === String(current)) o.selected = true;
-        subSel.appendChild(o);
-      });
+    SUBS.filter(function (s) { return !cat || String(s.cat) === String(cat); }).forEach(function (s) {
+      var o = document.createElement('option');
+      o.value = s.id; o.textContent = s.name;
+      if (String(s.id) === String(current)) o.selected = true;
+      subSel.appendChild(o);
+    });
   }
-  catSel.addEventListener('change', function () { current = ''; fill(); });
-  fill();
+  function subName() {
+    var s = SUBS.filter(function (x) { return String(x.id) === String(subSel.value); })[0];
+    return s ? s.name : '';
+  }
+
+  // Highlights: one row per field of the selected type; typed values survive a type change.
+  function renderHighlights() {
+    var list = (CATALOG.highlights[subName()] || []).filter(function (f) { return !f.rentOnly || typeSel.value === 'Rent'; });
+    var rows = $('hl-rows'); rows.innerHTML = '';
+    $('hl-empty').hidden = list.length > 0; $('hl-head').hidden = list.length === 0;
+    list.forEach(function (f) {
+      var st = state[f.key] || { value: '', display: true };
+      var row = document.createElement('div'); row.className = 'frow';
+      var lab = document.createElement('label'); lab.textContent = f.label; lab.htmlFor = 'hl_' + f.key;
+      var inp;
+      if (f.type === 'select') {
+        inp = document.createElement('select');
+        [''].concat(f.options).forEach(function (o) {
+          var op = document.createElement('option'); op.value = o; op.textContent = o || '—';
+          if (o === st.value) op.selected = true; inp.appendChild(op);
+        });
+      } else {
+        inp = document.createElement('input'); inp.type = 'text'; inp.value = st.value; inp.maxLength = 255;
+        if (f.placeholder) inp.placeholder = f.placeholder;
+      }
+      inp.name = 'hl[' + f.key + ']'; inp.id = 'hl_' + f.key;
+      var show = document.createElement('input'); show.type = 'checkbox'; show.name = 'hl_show[' + f.key + ']';
+      show.value = '1'; show.checked = st.display !== false; show.setAttribute('aria-label', 'Show ' + f.label + ' on site');
+      function keep() { state[f.key] = { value: inp.value, display: show.checked }; counts(); furnishings(); }
+      inp.addEventListener('input', keep); inp.addEventListener('change', keep); show.addEventListener('change', keep);
+      row.appendChild(lab); row.appendChild(inp); row.appendChild(show); rows.appendChild(row);
+    });
+    counts(); furnishings();
+  }
+
+  // Furnishings only for a furnished rental.
+  function furnishings() {
+    var el = document.querySelector('[name="hl[furnishing]"]');
+    var on = typeSel.value === 'Rent' && !!el && CATALOG.furnished.indexOf(el.value) !== -1;
+    $('fu-sec').hidden = !on;
+  }
+  function counts() {
+    var hl = document.querySelectorAll('#hl-rows [name^="hl["]'), filled = 0;
+    hl.forEach(function (i) { if (i.value.trim()) filled++; });
+    $('hl-count').textContent = hl.length ? filled + ' of ' + hl.length + ' filled' : '';
+    $('am-count').textContent = document.querySelectorAll('[name^="am_on["]:checked').length + ' selected';
+    var fu = 0; document.querySelectorAll('[name^="fu["]').forEach(function (i) { if (i.value.trim()) fu++; });
+    $('fu-count').textContent = fu + ' filled';
+  }
+  // typing a value into an amenity box ticks it
+  document.querySelectorAll('[name^="am["]').forEach(function (box) {
+    box.addEventListener('input', function () {
+      if (box.value.trim()) box.parentNode.querySelector('[type=checkbox]').checked = true;
+      counts();
+    });
+  });
+  document.querySelector('.pform').addEventListener('change', counts);
+  document.querySelector('.pform').addEventListener('input', counts);
+
+  catSel.addEventListener('change', function () { current = ''; fillSubs(); renderHighlights(); });
+  subSel.addEventListener('change', renderHighlights);
+  typeSel.addEventListener('change', renderHighlights);
+  fillSubs(); renderHighlights();
 })();
 </script>
 <%- include('partials/footer') %>

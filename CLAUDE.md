@@ -33,6 +33,8 @@ app/
     db.js             mysql2 pool from DB_* env vars.
     bootstrap.js      Schema auto-create, DB error messages, category-tree reconcile, legacy-column drop.
     middleware.js     requireLogin / requireMaster / csrfToken / checkCsrf.
+    fields.js         Type-aware field catalog: highlights per sub-category, amenities, furnishings.
+    uploads.js        Upload folder (UPLOAD_DIR), file helpers, storage diagnostics.
     mailer.js         sendSms (MSG91; no-op if MSG91_AUTHKEY unset) + notifyMasterEnquiry (stub/TODO).
   views/              EJS admin templates + partials/ (header, footer).
   site/               LIVE public site: index.html, properties.html, property-detail.html, contact.html,
@@ -58,7 +60,7 @@ create the master account, then `/adminvr/login`.
 ## 5. Data model (`app/schema.sql`)
 
 Tables: `users`, `categories`, `sub_categories`, `properties`, `property_images`, `enquiries`,
-`otp_logs`, `import_batches`.
+`otp_logs`, `import_batches`, `property_fields` (see 6a).
 
 **`properties` key columns:** `project_title` (the single **Property Title** — the listing headline),
 `description`, `search_type` ENUM('Rent','Buy'), `category_id`, `sub_category_id`, `city`, `locality`,
@@ -92,6 +94,26 @@ Commercial:  Office Space, Retail Store, Warehouse, Land
 - **Cascade:** selecting a Category filters the Sub-category options — in the admin form
   (`views/property-form.ejs`, inline script using `data-cat`) and on the public site
   (`site.js` `wireCascade()` for the home hero and the properties filter).
+
+## 6a. Type-aware fields (`app/src/fields.js`)
+
+Extra listing fields are a **fixed catalog in code**; values live in `property_fields`
+(`property_id, grp, field_key, value, display`), `grp` = `highlight` | `amenity` | `furnishing`.
+
+- **Highlights** — one set per sub-category (`HIGHLIGHTS['Office Space']`, …). Each has a key, label,
+  `text`/`select` type; per listing a value + "show on site" flag. `rentOnly` fields appear for Rent only.
+- **Amenities** — one list for all types; tick + optional value.
+- **Furnishings** — shown only when `search_type='Rent'` and the `furnishing` highlight is
+  Semi-furnished / Fully furnished / Furnished (`furnishingsApply`). All optional.
+- **Old spec columns** (`bedrooms, bathrooms, carpet_area, builtup_area, ceiling_height, floor_no,
+  total_floors`) are no longer on the form. Highlights marked `col` write them on save
+  (`legacyColumns`) because the listing cards and filters still read them. `backfillHighlights()`
+  (startup + after CSV import) copies those columns into highlight rows for listings that have none.
+- Admin form: `views/property-form.ejs` renders highlight rows client-side from the catalog for the
+  selected sub-category. API: `/api/listings` adds `highlights[]`, `amenities[]`, `furnishings[]`
+  (display flag + value applied). Detail page: first 4 highlights are the stat tiles, the rest
+  "Property highlights", then Amenities and Furnishings.
+- **To change fields, edit `fields.js` and redeploy.** Renaming a key orphans stored values.
 
 ## 7. Routes
 

@@ -7,7 +7,8 @@ const multer = require('multer');
 const pool = require('../src/db');
 const { requireLogin, requireMaster, csrfToken, checkCsrf } = require('../src/middleware');
 const { sendSms } = require('../src/mailer');
-const { ensureSchema, dbMessage, CATEGORY_TREE } = require('../src/bootstrap');
+const { ensureSchema, dbMessage, CATEGORY_TREE, backfillHighlights } = require('../src/bootstrap');
+const fields = require('../src/fields');
 
 // canonical display order for sub-categories, from the tree
 const SUB_ORDER = {};
@@ -178,7 +179,42 @@ async function loadFormData() {
   const [subs] = await pool.query('SELECT * FROM sub_categories');
   subs.sort((a, b) => a.category_id - b.category_id ||
     ((SUB_ORDER[a.name] ?? 99) - (SUB_ORDER[b.name] ?? 99)));
-  return { cats, subs, cities: ['Bangalore', 'Mumbai', 'Navi Mumbai', 'Thane'] };
+  return { cats, subs, cities: ['Bangalore', 'Mumbai', 'Navi Mumbai', 'Thane'],
+    catalog: { highlights: fields.HIGHLIGHTS, amenities: fields.AMENITIES, furnishings: fields.FURNISHINGS, furnished: fields.FURNISHED_VALUES } };
+}
+
+// Stored extra fields of one property, shaped for the form:
+// { highlight: {key: {value, display}}, amenity: {...}, furnishing: {...} }
+async function loadFieldValues(id) {
+  const out = { highlight: {}, amenity: {}, furnishing: {} };
+  if (!id) return out;
+  const [rows] = await pool.query('SELECT grp, field_key, value, display FROM property_fields WHERE property_id=?', [id]);
+  for (const r of rows) if (out[r.grp]) out[r.grp][r.field_key] = { value: r.value, display: !!r.display };
+  return out;
+}
+
+// Read the extra fields out of a submitted form, keeping only keys the catalog
+// defines for this listing's type. Same shape as loadFieldValues().
+function readFieldValues(body, subName, searchType) {
+  const obj = (k) => (body[k] && typeof body[k] === 'object' ? body[k] : {});
+  const txt = (v) => (typeof v === 'string' ? v.trim().slice(0, 255) : '');
+  const out = { highlight: {}, amenity: {}, furnishing: {} };
+  const hl = obj('hl'), show = obj('hl_show'), am = obj('am'), amOn = obj('am_on'), fu = obj('fu');
+  for (const f of fields.highlightsFor(subName)) {
+    if (f.rentOnly && searchType !== 'Rent') continue;
+    let v = txt(hl[f.key]);
+    if (f.type === 'select' && v && !f.options.includes(v)) v = '';
+    if (v) out.highlight[f.key] = { value: v, display: !!show[f.key] };
+  }
+  for (const a of fields.AMENITIES) {
+    const v = txt(am[a.key]);
+    if (amOn[a.key] || v) out.amenity[a.key] = { value: v, display: true };
+  }
+  const furnishing = (out.highlight.furnishing || {}).value;
+  if (fields.furnishingsApply(searchType, furnishing)) {
+    for (const f of fields.FURNISHINGS) { const v = txt(fu[f.key]); if (v) out.furnishing[f.key] = { value: v, display: true }; }
+  }
+  return out;
 }
 
 router.get('/property-edit', async (req, res) => {
@@ -193,7 +229,7 @@ router.get('/property-edit', async (req, res) => {
     const [imgs] = await pool.query('SELECT id, file_path FROM property_images WHERE property_id=? ORDER BY sort_order, id', [id]);
     images = imgs.map((i) => ({ id: i.id, src: isLocal(i.file_path) ? '/' + i.file_path : i.file_path, missing: isMissing(i.file_path) }));
   }
-  res.render('property-form', { ...base(req), page: 'property-edit', ...(await loadFormData()), p, isEdit: !!id, images, error: null });
+  res.render('property-form', { ...base(req), page: 'property-edit', ...(await loadFormData()), p, isEdit: !!id, images, fv: await loadFieldValues(id), error: null });
 });
 
 router.post('/property-edit', upload.array('images', 20), async (req, res) => {
@@ -208,29 +244,42 @@ router.post('/property-edit', upload.array('images', 20), async (req, res) => {
     description: str('description'), search_type: str('search_type') === 'Buy' ? 'Buy' : 'Rent',
     category_id: num('category_id'), sub_category_id: num('sub_category_id'), city: str('city'), locality: str('locality'),
     sale_price: num('sale_price'), monthly_rent: num('monthly_rent'), deposit_amount: num('deposit_amount'),
-    down_payment: num('down_payment'), possession_date: str('possession_date'), bedrooms: num('bedrooms'),
-    bathrooms: num('bathrooms'), carpet_area: num('carpet_area'), builtup_area: num('builtup_area'),
-    total_floors: num('total_floors'), floor_no: num('floor_no'), ceiling_height: str('ceiling_height'),
+    down_payment: num('down_payment'), possession_date: str('possession_date'),
     status: ['active', 'inactive', 'sold_out', 'rented_out'].includes(str('status')) ? str('status') : 'active',
     featured: req.body.featured ? 1 : 0,
   };
 
+  // extra fields for this listing's type; the old spec columns follow the highlights
+  const [[subRow]] = await pool.query('SELECT name FROM sub_categories WHERE id=?', [data.sub_category_id || 0]);
+  const subName = subRow ? subRow.name : '';
+  const fv = readFieldValues(req.body, subName, data.search_type);
+  if (subName) {
+    Object.assign(data, fields.legacyColumns(subName,
+      Object.fromEntries(Object.entries(fv.highlight).map(([k, f]) => [k, f.value]))));
+  }
+  const cols = PROP_FIELDS.filter((k) => k in data);
+
   if (!data.project_title) {
     (req.files || []).forEach((f) => { try { fs.unlinkSync(f.path); } catch (e) {} });
-    return res.render('property-form', { ...base(req), page: 'property-edit', ...(await loadFormData()), p: { ...data }, isEdit: !!id, images: [], error: 'Enter a property title.' });
+    return res.render('property-form', { ...base(req), page: 'property-edit', ...(await loadFormData()), p: { ...data, id: id || undefined }, isEdit: !!id, images: [], fv, error: 'Enter a property title.' });
   }
 
   let pid;
   if (id) {
-    const set = PROP_FIELDS.map((k) => `${k}=?`).join(', ');
-    await pool.query(`UPDATE properties SET ${set} WHERE id=?`, [...PROP_FIELDS.map((k) => data[k]), id]);
+    const set = cols.map((k) => `${k}=?`).join(', ');
+    await pool.query(`UPDATE properties SET ${set} WHERE id=?`, [...cols.map((k) => data[k]), id]);
     pid = id;
   } else {
-    const cols = [...PROP_FIELDS, 'created_by'];
-    await pool.query(`INSERT INTO properties (${cols.join(',')}) VALUES (${cols.map(() => '?').join(',')})`,
-      [...PROP_FIELDS.map((k) => data[k]), req.session.user.id]);
-    pid = (await pool.query('SELECT LAST_INSERT_ID() id'))[0][0].id;
+    const [ins] = await pool.query(`INSERT INTO properties (${[...cols, 'created_by'].join(',')}) VALUES (${cols.map(() => '?').join(',')},?)`,
+      [...cols.map((k) => data[k]), req.session.user.id]);
+    pid = ins.insertId;
   }
+
+  // replace the stored extra fields with what was submitted
+  await pool.query('DELETE FROM property_fields WHERE property_id=?', [pid]);
+  const frows = [];
+  for (const grp of Object.keys(fv)) for (const [k, f] of Object.entries(fv[grp])) frows.push([pid, grp, k, f.value, f.display ? 1 : 0]);
+  if (frows.length) await pool.query('INSERT INTO property_fields (property_id,grp,field_key,value,display) VALUES ?', [frows]);
 
   // record uploaded images, cap at 20 total
   let have = (await pool.query('SELECT COUNT(*) n FROM property_images WHERE property_id=?', [pid]))[0][0].n;
@@ -342,6 +391,7 @@ router.post('/import', requireMaster, uploadCsv.single('csv'), async (req, res) 
       ok++;
     } catch (e) { fail++; errors.push(`Row ${total}: ${e.message}`); }
   }
+  await backfillHighlights();   // imported spec columns -> highlight fields
   await pool.query('INSERT INTO import_batches (filename,rows_total,rows_ok,rows_failed,errors,created_by) VALUES (?,?,?,?,?,?)',
     [req.file.originalname, total, ok, fail, errors.join('\n'), req.session.user.id]);
   res.render('import', { ...base(req), page: 'import', report: { total, ok, fail, errors } });

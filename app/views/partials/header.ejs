@@ -13,7 +13,6 @@
   <nav aria-label="Admin">
     <a href="/adminvr/dashboard" class="<%= page === 'dashboard' ? 'active' : '' %>">Dashboard</a>
     <a href="/adminvr/properties" class="<%= page === 'properties' ? 'active' : '' %>">Properties</a>
-    <a href="/adminvr/property-edit" class="<%= page === 'property-edit' ? 'active' : '' %>">Add property</a>
     <% if (user.role === 'master') { %>
       <a href="/adminvr/import" class="<%= page === 'import' ? 'active' : '' %>">Import</a>
       <a href="/adminvr/enquiries" class="<%= page === 'enquiries' ? 'active' : '' %>">Enquiries</a>

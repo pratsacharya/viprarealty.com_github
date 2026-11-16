@@ -43,7 +43,21 @@
   </div>
   <label style="display:flex;align-items:center;gap:8px;margin-top:14px"><input type="checkbox" name="featured" style="width:auto" <%= v('featured')?'checked':'' %>> Feature on Home page</label>
   <label>Images (JPG/PNG/WebP, up to 20 total)<input type="file" name="images" accept="image/*" multiple></label>
-  <% if (imgCount) { %><p class="muted" style="margin-top:10px"><%= imgCount %> image(s) already uploaded.</p><% } %>
+  <% if (images.length) { const dead = images.filter(i => i.missing).length; %>
+    <p class="muted" style="margin-top:10px"><%= images.length %> of 20 photo(s) used. The first photo is the one shown on the listing card.</p>
+    <% if (dead) { %>
+      <p class="note err"><%= dead %> photo(s) are missing from the server and are hidden on the website.
+        <a href="/adminvr/properties/<%= p.id %>/images/prune?csrf=<%= csrf %>">Remove all <%= dead %> missing</a></p>
+    <% } %>
+    <div class="photo-grid">
+      <% images.forEach(i => { %>
+        <div class="photo<%= i.missing ? ' missing' : '' %>">
+          <% if (i.missing) { %><span>Missing file</span><% } else { %><img src="<%= i.src %>" alt="" loading="lazy"><% } %>
+          <a href="/adminvr/properties/<%= p.id %>/images/<%= i.id %>/delete?csrf=<%= csrf %>" onclick="return confirm('Remove this photo?')">Remove</a>
+        </div>
+      <% }) %>
+    </div>
+  <% } %>
   <button class="btn" type="submit" style="margin-top:18px"><%= isEdit ? 'Save changes' : 'Add property' %></button>
 </form>
 <script>

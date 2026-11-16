@@ -98,13 +98,15 @@ Commercial:  Office Space, Retail Store, Warehouse, Land
 **Admin (`/adminvr/*`, in `routes/admin.js`; all auth-gated except install/login):**
 `GET/POST /install` (first-run master creation, self-bootstraps schema), `GET/POST /login`,
 `GET /logout`, `GET /dashboard`, `GET /properties`, `GET /properties/:id/status|feature|delete`,
-`GET/POST /property-edit` (add/edit, multer image upload ≤20), `GET/POST /change-password`,
+`GET/POST /property-edit` (add/edit, multer image upload ≤20),
+`GET /properties/:id/images/:imgId/delete` and `/properties/:id/images/prune` (master: remove one photo /
+all photo records whose file is missing), `GET/POST /change-password`,
 `GET /enquiries`, `GET/POST /users` (master only), `GET /users/:id/delete`, `GET/POST /import` (CSV).
 
 **Public API (`/api/*`, in `routes/api.js`):**
 - `GET /categories` — category→sub-category tree.
 - `GET /listings` — filters: `search_type, city, category, sub, q, id, featured`; returns active
-  listings with an `images[]` array.
+  listings with an `images[]` array. Photo records whose file is missing on disk are left out.
 - `POST /enquiry` — creates an enquiry + issues a **4-digit OTP** (MSG91 SMS if configured).
 - `POST /verify-otp` — verifies within 10 min, notifies master, sends a thank-you.
 

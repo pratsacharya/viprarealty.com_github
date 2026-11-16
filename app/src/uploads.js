@@ -23,4 +23,8 @@ fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 // DB rows store 'uploads/<filename>'; map one to its real location on disk.
 const diskPath = (filePath) => path.join(UPLOAD_DIR, path.basename(String(filePath)));
 
-module.exports = { UPLOAD_DIR, diskPath };
+// Only files we store ourselves can go missing; CSV-imported external URLs are left alone.
+const isLocal = (filePath) => String(filePath).startsWith('uploads/');
+const isMissing = (filePath) => isLocal(filePath) && !fs.existsSync(diskPath(filePath));
+
+module.exports = { UPLOAD_DIR, diskPath, isLocal, isMissing };

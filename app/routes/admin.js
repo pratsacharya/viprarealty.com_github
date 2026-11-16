@@ -249,6 +249,10 @@ router.post('/property-edit', upload.array('images', 20), async (req, res) => {
     featured: req.body.featured ? 1 : 0,
   };
 
+  // only the price fields of the chosen search type are kept
+  if (data.search_type === 'Rent') { data.sale_price = null; data.down_payment = null; }
+  else { data.monthly_rent = null; data.deposit_amount = null; }
+
   // extra fields for this listing's type; the old spec columns follow the highlights
   const [[subRow]] = await pool.query('SELECT name FROM sub_categories WHERE id=?', [data.sub_category_id || 0]);
   const subName = subRow ? subRow.name : '';

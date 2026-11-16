@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const pool = require('../src/db');
 const { sendSms, notifyMasterEnquiry } = require('../src/mailer');
 const { isMissing } = require('../src/uploads');
+const fields = require('../src/fields');
 
 const router = express.Router();
 
@@ -82,6 +83,27 @@ router.post('/verify-otp', async (req, res) => {
   res.json({ ok: true, message: 'Enquiry verified. We will get in touch with you.' });
 });
 
+// Add highlights / amenities / furnishings (catalog order, labels from src/fields.js) to each listing.
+async function attachFields(rows) {
+  if (!rows.length) return;
+  const [frows] = await pool.query('SELECT * FROM property_fields WHERE property_id IN (?)', [rows.map((r) => r.id)]);
+  const by = {};
+  for (const f of frows) ((by[f.property_id] = by[f.property_id] || {})[f.grp + ':' + f.field_key] = f);
+  for (const r of rows) {
+    const mine = by[r.id] || {};
+    const pick = (grp, list, needValue) => list.map((d) => {
+      const f = mine[grp + ':' + d.key];
+      if (!f || !f.display || (needValue && !f.value)) return null;
+      return { key: d.key, label: d.label, value: f.value };
+    }).filter(Boolean);
+    const all = fields.highlightsFor(r.sub_category).filter((d) => !d.rentOnly || r.search_type === 'Rent');
+    r.highlights = pick('highlight', all, true);
+    r.amenities = pick('amenity', fields.AMENITIES, false);
+    const furnishing = (mine['highlight:furnishing'] || {}).value;
+    r.furnishings = fields.furnishingsApply(r.search_type, furnishing) ? pick('furnishing', fields.FURNISHINGS, true) : [];
+  }
+}
+
 // Public read API for the front-end
 router.get('/listings', async (req, res) => {
   // Public listings: active plus sold-out / rented-out (shown with a badge). Inactive stays hidden.
@@ -114,6 +136,7 @@ router.get('/listings', async (req, res) => {
     // skip records whose file is gone, so a dead photo never becomes the card image
     r.images = imgs.map((i) => i.file_path).filter((f) => !isMissing(f));
   }
+  await attachFields(rows);
   res.json({ count: rows.length, listings: rows });
 });
 

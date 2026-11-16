@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const pool = require('./db');
+const fields = require('./fields');
 
 // Single source of truth for the category → sub-category tree.
 // Change this list (and redeploy) to add/remove/reorder sub-categories;
@@ -89,6 +90,34 @@ async function ensureCategoryTree() {
   }
 }
 
+// Create the property_fields table on an existing DB (schema.sql covers fresh installs).
+async function ensureFieldsTable() {
+  await pool.query(`CREATE TABLE IF NOT EXISTS property_fields (
+    property_id INT NOT NULL,
+    grp VARCHAR(12) NOT NULL,
+    field_key VARCHAR(40) NOT NULL,
+    value VARCHAR(255) NOT NULL DEFAULT '',
+    display TINYINT(1) NOT NULL DEFAULT 1,
+    PRIMARY KEY (property_id, grp, field_key),
+    FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+}
+
+// Copy the old spec columns (bedrooms, carpet area, floor, ...) into highlight
+// rows for listings that have none yet — existing listings and CSV imports.
+// Idempotent: a listing with any highlight row is left alone.
+async function backfillHighlights() {
+  const [rows] = await pool.query(
+    `SELECT p.*, s.name sub_name FROM properties p JOIN sub_categories s ON s.id=p.sub_category_id
+     WHERE NOT EXISTS (SELECT 1 FROM property_fields f WHERE f.property_id=p.id AND f.grp='highlight')`);
+  for (const r of rows) {
+    for (const [k, v] of Object.entries(fields.fromLegacy(r.sub_name, r))) {
+      await pool.query('INSERT IGNORE INTO property_fields (property_id,grp,field_key,value,display) VALUES (?,?,?,?,1)',
+        [r.id, 'highlight', k, String(v).slice(0, 255)]);
+    }
+  }
+}
+
 // Turn a DB driver error into a message that names the Hostinger setting to fix.
 function dbMessage(e) {
   const code = e && e.code;
@@ -115,4 +144,4 @@ function dbMessage(e) {
   return msg;
 }
 
-module.exports = { ensureSchema, dbMessage, ensureCategoryTree, dropLegacyColumns, CATEGORY_TREE };
+module.exports = { ensureSchema, dbMessage, ensureCategoryTree, dropLegacyColumns, ensureFieldsTable, backfillHighlights, CATEGORY_TREE };

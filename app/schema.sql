@@ -62,6 +62,17 @@ CREATE TABLE IF NOT EXISTS property_images (
   FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Type-aware extra fields (catalog in src/fields.js): highlights, amenities, furnishings
+CREATE TABLE IF NOT EXISTS property_fields (
+  property_id INT NOT NULL,
+  grp VARCHAR(12) NOT NULL,
+  field_key VARCHAR(40) NOT NULL,
+  value VARCHAR(255) NOT NULL DEFAULT '',
+  display TINYINT(1) NOT NULL DEFAULT 1,
+  PRIMARY KEY (property_id, grp, field_key),
+  FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS enquiries (
   id INT AUTO_INCREMENT PRIMARY KEY,
   property_id INT NULL,

@@ -240,7 +240,13 @@
       setHTML('d-badges', '<span class="badge badge-ink">' + b[0] + '</span>' +
         (l.category ? '<span class="badge">' + esc(l.category + (l.sub_category ? ' · ' + l.sub_category : '')) + '</span>' : '') +
         (l.city ? '<span class="badge">' + esc(l.city) + '</span>' : ''));
-      var hl = highlights(l);
+      // Type-aware fields from the admin (already filtered to "show on site" + filled).
+      // First four become the stat tiles, the rest a "Property highlights" list.
+      var typed = l.highlights || [];
+      var hl = typed.length ? typed.slice(0, 4).map(function (h) { return [h.value, h.label]; }) : highlights(l);
+      kvSection('d-more', typed.slice(4));
+      kvSection('d-amenities', (l.amenities || []).map(function (a) { return { label: a.label, value: a.value || 'Yes' }; }));
+      kvSection('d-furnishings', l.furnishings || []);
       setHTML('d-highlights', hl.map(function (h) {
         return '<div class="stat"><div class="v">' + esc(h[0]) + '</div><div class="l">' + esc(h[1]) + '</div></div>';
       }).join(''));
@@ -265,7 +271,6 @@
         ['Possession', l.possession_date],
         ['Deposit', l.deposit_amount ? inr(l.deposit_amount) : ''],
         ['Down payment', l.down_payment ? inr(l.down_payment) : ''],
-        ['Total floors', l.total_floors],
         ['Status', (l.status || '').replace('_', ' ')],
       ].filter(function (r) { return r[1] != null && r[1] !== ''; }).map(function (r) {
         return '<div class="kv"><span>' + r[0] + '</span><span>' + esc(r[1]) + '</span></div>';
@@ -300,6 +305,15 @@
         if (sg) sg.innerHTML = sim.map(cardHTML).join('') || '<p class="empty">No similar listings yet.</p>';
       });
     });
+    // Fill a label/value list and reveal its section; an empty list keeps the section hidden.
+    function kvSection(id, items) {
+      var box = document.getElementById(id), sec = document.getElementById(id + '-sec');
+      if (!box || !sec) return;
+      box.innerHTML = items.map(function (r) {
+        return '<div class="kv"><span>' + esc(r.label) + '</span><span>' + esc(r.value) + '</span></div>';
+      }).join('');
+      sec.hidden = !items.length;
+    }
     function set(id, t) { var el = document.getElementById(id); if (el) el.textContent = String(t == null ? '' : t).trim(); }
     function setHTML(id, h) { var el = document.getElementById(id); if (el) el.innerHTML = h; }
   }

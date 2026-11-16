@@ -293,7 +293,7 @@
       set('d-price-label', l.search_type === 'Buy' ? 'Sale price' : 'Monthly rent');
       setHTML('d-price', priceText(l));
       var b = badge(l);
-      setHTML('d-badges', '<span class="badge badge-ink">' + b[0] + '</span>' +
+      setHTML('d-badges', '' +
         (l.category ? '<span class="badge">' + esc(l.category + (l.sub_category ? ' · ' + l.sub_category : '')) + '</span>' : '') +
         (l.city ? '<span class="badge">' + esc(l.city) + '</span>' : ''));
       // Type-aware fields from the admin (already filtered to "show on site" + filled).
@@ -317,6 +317,10 @@
         else g.innerHTML = imgs.slice(0, 3).map(function (src) {
           return '<div><img src="' + esc(imgSrc(src)) + '" alt="" loading="lazy"></div>';
         }).join('');
+        // status box (For sale / For rent / Sold out / Rented out) on the large photo, top left
+        var closed = (l.status === 'sold_out' || l.status === 'rented_out');
+        g.firstElementChild.insertAdjacentHTML('beforeend',
+          '<span class="gallery-pill' + (closed ? ' gallery-pill-dark' : '') + '">' + esc(b[0]) + '</span>');
         // The large photo slides through all photos in place (arrows, swipe); the
         // side tiles follow with the next two. Any tile opens the full-screen viewer.
         if (imgs.length) {

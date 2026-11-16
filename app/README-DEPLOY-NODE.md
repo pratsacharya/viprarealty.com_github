@@ -58,8 +58,8 @@ In the Node.js app panel, add **Environment variables** (preferred on Hostinger)
 `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`, `SESSION_SECRET` (any long random string),
 `MASTER_EMAIL`, `ADMIN_WHATSAPP`, and later `MSG91_AUTHKEY` / `MSG91_SENDER`.
 
-**Also set `UPLOAD_DIR=~/vipra-uploads`** (any folder *outside* the application root; `~` is your
-hosting home folder). Property images are written there and served at `/uploads/...`. Without it they
+**Also set `UPLOAD_DIR=vipra-uploads`** (a bare name or `~/name` is created in your hosting home
+folder, outside the application root; an absolute path also works). Property images are written there and served at `/uploads/...`. Without it they
 go to `uploads/` inside the app folder, which every Git deploy replaces — the images then 404 on the
 live site. The app creates the folder on start and logs the path it is using (`uploads in ...`).
 

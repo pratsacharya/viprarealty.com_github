@@ -7,9 +7,10 @@
 <link rel="stylesheet" href="/public/admin.css">
 </head>
 <body>
-<header class="topbar">
-  <div class="brand"><%= SITE_NAME %> · Admin</div>
-  <nav>
+<div class="shell">
+<aside class="side">
+  <a class="side-brand" href="/adminvr/dashboard"><img src="/assets/logo.png" alt="<%= SITE_NAME %>"><span>Admin</span></a>
+  <nav aria-label="Admin">
     <a href="/adminvr/dashboard" class="<%= page === 'dashboard' ? 'active' : '' %>">Dashboard</a>
     <a href="/adminvr/properties" class="<%= page === 'properties' ? 'active' : '' %>">Properties</a>
     <a href="/adminvr/property-edit" class="<%= page === 'property-edit' ? 'active' : '' %>">Add property</a>
@@ -20,6 +21,10 @@
     <% } %>
     <a href="/adminvr/change-password" class="<%= page === 'change-password' ? 'active' : '' %>">Password</a>
   </nav>
+</aside>
+<div class="content">
+<header class="topbar">
   <div class="who"><%= user.email %> (<%= user.role %>) · <a href="/adminvr/logout">Log out</a></div>
+  <a class="btn" href="/adminvr/property-edit">+ Add property</a>
 </header>
 <main class="wrap">

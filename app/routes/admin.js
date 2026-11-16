@@ -25,7 +25,7 @@ const router = express.Router();
       : h));
 });
 
-const { UPLOAD_DIR, diskPath, isLocal, isMissing } = require('../src/uploads');
+const { UPLOAD_DIR, diskPath, isLocal, isMissing, storageInfo } = require('../src/uploads');
 
 const OK_EXT = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
 const storage = multer.diskStorage({
@@ -114,7 +114,8 @@ router.get('/dashboard', async (req, res) => {
   const [top] = await pool.query(`SELECT p.project_title, COUNT(e.id) n
     FROM properties p JOIN enquiries e ON e.property_id=p.id AND e.otp_verified=1
     GROUP BY p.id ORDER BY n DESC LIMIT 5`);
-  res.render('dashboard', { ...base(req), page: 'dashboard', counts, byCat, top });
+  const storage = req.session.user.role === 'master' ? storageInfo() : null;
+  res.render('dashboard', { ...base(req), page: 'dashboard', counts, byCat, top, storage });
 });
 
 // ---------- properties list + status actions ----------

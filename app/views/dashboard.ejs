@@ -17,4 +17,21 @@
 <% if (!top.length) { %><tr><td class="muted" colspan="2">No verified enquiries yet.</td></tr><% } %>
 <% top.forEach(r => { %><tr><td><%= r.project_title || '—' %></td><td><%= r.n %></td></tr><% }) %>
 </table>
+
+<% if (storage) { %>
+<h2>Photo storage</h2>
+<% if (storage.insideApp) { %>
+  <p class="note err">Photos are stored inside the app folder and will be deleted on the next deploy.
+    Set the <code>UPLOAD_DIR</code> environment variable to a folder outside the app (e.g. <code>~/vipra-uploads</code>) and restart the app.</p>
+<% } else { %>
+  <p class="note ok">Photos are stored outside the app folder and survive deploys.</p>
+<% } %>
+<table>
+  <tr><th>Photo folder in use</th><td><code><%= storage.dir %></code></td></tr>
+  <tr><th>UPLOAD_DIR setting</th><td><% if (storage.setting) { %><code><%= storage.setting %></code><% } else { %><span class="muted">not set — the app did not receive it</span><% } %></td></tr>
+  <tr><th>App folder</th><td><code><%= storage.appRoot %></code></td></tr>
+  <tr><th>Home folder (~)</th><td><code><%= storage.home %></code></td></tr>
+  <tr><th>Files stored</th><td><%= storage.files %></td></tr>
+</table>
+<% } %>
 <%- include('partials/footer') %>

@@ -27,4 +27,20 @@ const diskPath = (filePath) => path.join(UPLOAD_DIR, path.basename(String(filePa
 const isLocal = (filePath) => String(filePath).startsWith('uploads/');
 const isMissing = (filePath) => isLocal(filePath) && !fs.existsSync(diskPath(filePath));
 
-module.exports = { UPLOAD_DIR, diskPath, isLocal, isMissing };
+// Diagnostics for the admin dashboard: where photos are stored and whether a deploy will wipe them.
+function storageInfo() {
+  const appRoot = path.join(__dirname, '..');
+  const rel = path.relative(fs.realpathSync(appRoot), fs.realpathSync(UPLOAD_DIR));
+  let files = 0;
+  try { files = fs.readdirSync(UPLOAD_DIR).filter((f) => !f.startsWith('.')).length; } catch (e) {}
+  return {
+    dir: UPLOAD_DIR,
+    setting: (process.env.UPLOAD_DIR || '').trim(),
+    insideApp: !rel.startsWith('..') && !path.isAbsolute(rel),
+    appRoot,
+    home: os.homedir(),
+    files,
+  };
+}
+
+module.exports = { UPLOAD_DIR, diskPath, isLocal, isMissing, storageInfo };

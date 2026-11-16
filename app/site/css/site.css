@@ -315,6 +315,8 @@ select.field.auto { width: auto; }
 .gallery-nav:hover { background: var(--tint); }
 .gallery-prev { left: 14px; }
 .gallery-next { right: 14px; }
+.gallery-pill { position: absolute; left: 14px; top: 14px; background: #fff; color: var(--ink); border-radius: var(--r-sm); padding: 6px 10px; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+.gallery-pill-dark { background: var(--ink); color: #fff; }
 .gallery-count { position: absolute; left: 14px; bottom: 14px; background: rgba(21,25,34,.72); color: #fff; border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 600; }
 
 /* Full-screen photo viewer */

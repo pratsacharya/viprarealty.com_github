@@ -39,7 +39,8 @@ app/
                       js/site.js, assets/logo.png.
   public/admin.css    Admin panel styles.
   schema.sql          MySQL schema (also auto-applied on first run).
-  uploads/            Property images at runtime (.gitkeep committed).
+  uploads/            Property images at runtime — local default only (.gitkeep committed).
+                      Production sets UPLOAD_DIR (src/uploads.js) so images survive deploys.
 design/               Original static mockups — REFERENCE ONLY. Live site is app/site/.
 docs/                 PRD (MD + Word), brief, Excel import template.
 ```
@@ -137,6 +138,11 @@ Data comes only from `/api/*`. Key pieces:
 `DB_HOST` (Hostinger: `localhost`), `DB_NAME`, `DB_USER`, `DB_PASS`, `SESSION_SECRET`, `MASTER_EMAIL`
 (= `24vipra@gmail.com`), `ADMIN_WHATSAPP` (= `919108598918`). Optional, only for live OTP:
 `MSG91_AUTHKEY`, `MSG91_SENDER`.
+
+`UPLOAD_DIR` — folder for uploaded property images (`~` expands to the home folder). Unset = `app/uploads`.
+**Must be set on Hostinger to a path outside the app root** (e.g. `~/vipra-uploads`): a Git deploy
+replaces the app folder and wipes images stored inside it. Always resolve image files through
+`src/uploads.js` (`UPLOAD_DIR`, `diskPath`), never `path.join(__dirname, 'uploads')`.
 
 **Hostinger gotcha:** MySQL DB and user names are auto-prefixed with the account id (e.g.
 `u707964325_viprarealty_d` / `u707964325_viprarealty_u`). `DB_NAME`/`DB_USER` must use the **full

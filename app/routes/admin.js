@@ -25,8 +25,7 @@ const router = express.Router();
       : h));
 });
 
-const UPLOAD_DIR = path.join(__dirname, '..', 'uploads');
-if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+const { UPLOAD_DIR, diskPath } = require('../src/uploads');
 
 const OK_EXT = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
 const storage = multer.diskStorage({
@@ -138,7 +137,7 @@ router.get('/properties/:id/feature', requireMaster, checkCsrf, async (req, res)
 router.get('/properties/:id/delete', requireMaster, checkCsrf, async (req, res) => {
   const id = +req.params.id;
   const [imgs] = await pool.query('SELECT file_path FROM property_images WHERE property_id=?', [id]);
-  for (const r of imgs) { const f = path.join(__dirname, '..', r.file_path); if (fs.existsSync(f)) fs.unlinkSync(f); }
+  for (const r of imgs) { const f = diskPath(r.file_path); if (fs.existsSync(f)) fs.unlinkSync(f); }
   await pool.query('DELETE FROM properties WHERE id=?', [id]);
   res.redirect('/adminvr/properties');
 });

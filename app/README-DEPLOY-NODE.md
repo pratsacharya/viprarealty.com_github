@@ -20,7 +20,7 @@ routes/
   api.js               POST /api/enquiry, POST /api/verify-otp, GET /api/listings
 views/                 EJS templates (+ partials/header, partials/footer)
 public/admin.css       admin styling (served at /public/admin.css)
-uploads/               property images are written here
+uploads/               property images (local default; production uses UPLOAD_DIR, see step 4)
 ```
 
 Routes: `/adminvr/login`, `/adminvr/dashboard`, `/adminvr/properties`, `/adminvr/property-edit`,
@@ -57,6 +57,11 @@ Upload everything in this folder **except `node_modules/`** into the application
 In the Node.js app panel, add **Environment variables** (preferred on Hostinger) — or upload a `.env`:
 `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`, `SESSION_SECRET` (any long random string),
 `MASTER_EMAIL`, `ADMIN_WHATSAPP`, and later `MSG91_AUTHKEY` / `MSG91_SENDER`.
+
+**Also set `UPLOAD_DIR=~/vipra-uploads`** (any folder *outside* the application root; `~` is your
+hosting home folder). Property images are written there and served at `/uploads/...`. Without it they
+go to `uploads/` inside the app folder, which every Git deploy replaces — the images then 404 on the
+live site. The app creates the folder on start and logs the path it is using (`uploads in ...`).
 
 ### 5. Install dependencies + start
 In the Node.js app panel click **Run NPM Install**, then **Start** (or Restart) the app.

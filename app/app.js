@@ -7,6 +7,7 @@ require('dotenv').config();
 const path = require('path');
 const express = require('express');
 const session = require('express-session');
+const { UPLOAD_DIR } = require('./src/uploads');
 
 const app = express();
 
@@ -16,7 +17,7 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use('/public', express.static(path.join(__dirname, 'public')));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(UPLOAD_DIR));
 
 app.use(session({
   name: 'vr_sid',
@@ -46,7 +47,7 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log('Vipra Realty admin running on port ' + PORT));
+app.listen(PORT, () => console.log('Vipra Realty admin running on port ' + PORT + ' — uploads in ' + UPLOAD_DIR));
 
 // On startup: drop retired columns, then reconcile the category tree.
 // Non-fatal: if the DB isn't reachable yet, log and carry on.

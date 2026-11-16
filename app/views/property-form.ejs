@@ -31,12 +31,10 @@
   <details class="sec" open>
     <summary>Price and possession</summary>
     <div class="row">
-      <label>Sale price (₹)<input name="sale_price" value="<%= v('sale_price') %>"></label>
-      <label>Monthly rent (₹)<input name="monthly_rent" value="<%= v('monthly_rent') %>"></label>
-      <label>Deposit (₹)<input name="deposit_amount" value="<%= v('deposit_amount') %>"></label>
-      <label>Down payment (₹)<input name="down_payment" value="<%= v('down_payment') %>"></label>
-    </div>
-    <div class="row">
+      <label data-for="Buy">Sale price (₹)<input name="sale_price" value="<%= v('sale_price') %>"></label>
+      <label data-for="Buy">Down payment (₹)<input name="down_payment" value="<%= v('down_payment') %>"></label>
+      <label data-for="Rent">Monthly rent (₹)<input name="monthly_rent" value="<%= v('monthly_rent') %>"></label>
+      <label data-for="Rent">Deposit (₹)<input name="deposit_amount" value="<%= v('deposit_amount') %>"></label>
       <label>Possession date<input name="possession_date" value="<%= v('possession_date') %>" placeholder="DD-MM-YYYY or Immediate"></label>
     </div>
   </details>
@@ -175,10 +173,17 @@
   document.querySelector('.pform').addEventListener('change', counts);
   document.querySelector('.pform').addEventListener('input', counts);
 
+  // Price fields follow the search type: Rent -> monthly rent + deposit, Buy -> sale price + down payment.
+  function priceFields() {
+    document.querySelectorAll('.pform [data-for]').forEach(function (el) {
+      el.hidden = el.getAttribute('data-for') !== typeSel.value;
+    });
+  }
+
   catSel.addEventListener('change', function () { current = ''; fillSubs(); renderHighlights(); });
   subSel.addEventListener('change', renderHighlights);
-  typeSel.addEventListener('change', renderHighlights);
-  fillSubs(); renderHighlights();
+  typeSel.addEventListener('change', function () { renderHighlights(); priceFields(); });
+  fillSubs(); renderHighlights(); priceFields();
 })();
 </script>
 <%- include('partials/footer') %>

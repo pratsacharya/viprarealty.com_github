@@ -220,6 +220,62 @@
     return out;
   }
 
+  // Full-screen photo viewer: arrows, keyboard (Left / Right / Esc) and swipe.
+  var viewer = null;
+  function openViewer(imgs, start, title) {
+    if (!viewer) {
+      var el = document.createElement('div');
+      el.className = 'viewer'; el.hidden = true;
+      el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Property photos');
+      el.innerHTML =
+        '<button type="button" class="viewer-close" aria-label="Close photos">&times;</button>' +
+        '<button type="button" class="viewer-nav viewer-prev" aria-label="Previous photo">&#8249;</button>' +
+        '<img class="viewer-img" alt="">' +
+        '<button type="button" class="viewer-nav viewer-next" aria-label="Next photo">&#8250;</button>' +
+        '<div class="viewer-count" aria-live="polite"></div>';
+      document.body.appendChild(el);
+      viewer = { el: el, img: el.querySelector('.viewer-img'), count: el.querySelector('.viewer-count'), imgs: [], i: 0, title: '', back: null };
+      el.querySelector('.viewer-close').addEventListener('click', closeViewer);
+      el.querySelector('.viewer-prev').addEventListener('click', function () { step(-1); });
+      el.querySelector('.viewer-next').addEventListener('click', function () { step(1); });
+      el.addEventListener('click', function (e) { if (e.target === el) closeViewer(); });
+      document.addEventListener('keydown', function (e) {
+        if (viewer.el.hidden) return;
+        if (e.key === 'Escape') closeViewer();
+        else if (e.key === 'ArrowLeft') step(-1);
+        else if (e.key === 'ArrowRight') step(1);
+      });
+      var x0 = null;
+      el.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+      el.addEventListener('touchend', function (e) {
+        if (x0 == null) return;
+        var dx = e.changedTouches[0].clientX - x0; x0 = null;
+        if (Math.abs(dx) > 40) step(dx < 0 ? 1 : -1);
+      });
+    }
+    viewer.imgs = imgs; viewer.title = title || 'Property'; viewer.back = document.activeElement;
+    viewer.el.classList.toggle('is-single', imgs.length < 2);
+    viewer.el.hidden = false;
+    document.body.style.overflow = 'hidden';
+    showPhoto(start);
+    viewer.el.querySelector('.viewer-close').focus();
+  }
+  function showPhoto(i) {
+    var n = viewer.imgs.length;
+    viewer.i = (i + n) % n;
+    viewer.img.src = imgSrc(viewer.imgs[viewer.i]);
+    viewer.img.alt = viewer.title + ' — photo ' + (viewer.i + 1) + ' of ' + n;
+    viewer.count.textContent = (viewer.i + 1) + ' / ' + n;
+    if (n > 1) new Image().src = imgSrc(viewer.imgs[(viewer.i + 1) % n]);   // warm the next one
+  }
+  function step(d) { if (viewer.imgs.length > 1) showPhoto(viewer.i + d); }
+  function closeViewer() {
+    if (!viewer) return;
+    viewer.el.hidden = true;
+    document.body.style.overflow = '';
+    if (viewer.back && viewer.back.focus) viewer.back.focus();
+  }
+
   function initDetail() {
     var root = document.getElementById('detail-root');
     if (!root) return;
@@ -258,10 +314,18 @@
         var imgs = (l.images || []);
         if (!imgs.length) g.innerHTML = '<div class="single">' + PLACEHOLDER + '</div>';
         else if (imgs.length === 1) g.innerHTML = '<div class="single"><img src="' + esc(imgSrc(imgs[0])) + '" alt=""></div>';
-        else g.innerHTML = imgs.slice(0, 3).map(function (src, i) {
-          var more = (i === 2 && imgs.length > 3) ? '<span class="more">+' + (imgs.length - 3) + ' photos</span>' : '';
-          return '<div><img src="' + esc(imgSrc(src)) + '" alt="" loading="lazy">' + more + '</div>';
+        else g.innerHTML = imgs.slice(0, 3).map(function (src) {
+          return '<div><img src="' + esc(imgSrc(src)) + '" alt="" loading="lazy"></div>';
         }).join('');
+        // every tile opens the full-screen viewer at its photo
+        if (imgs.length) {
+          g.insertAdjacentHTML('beforeend', '<button type="button" class="gallery-all">View all ' + imgs.length + ' photo' + (imgs.length > 1 ? 's' : '') + '</button>');
+          Array.prototype.forEach.call(g.querySelectorAll(':scope > div'), function (tile, i) {
+            tile.classList.add('is-zoom');
+            tile.addEventListener('click', function () { openViewer(imgs, i, title); });
+          });
+          g.querySelector('.gallery-all').addEventListener('click', function () { openViewer(imgs, 0, title); });
+        }
       }
       // key details
       setHTML('d-details', [

@@ -396,7 +396,6 @@
         ['Property type', l.sub_category],
         ['Locality', l.locality], ['City', l.city],
         ['Possession', l.possession_date],
-        ['Deposit', l.deposit_amount ? inr(l.deposit_amount) : ''],
         ['Down payment', l.down_payment ? inr(l.down_payment) : ''],
         ['Status', (l.status || '').replace('_', ' ')],
       ].filter(function (r) { return r[1] != null && r[1] !== ''; }).map(function (r) {

@@ -17,7 +17,7 @@
 
   // Rent breakdown rows for the property page price box (rent listings only):
   // Maintenance ("+ ₹5,000/mo" for a number, the text as entered otherwise),
-  // Monthly total when maintenance is a number, then Security deposit.
+  // Monthly Total when maintenance is a number, then Security Deposit.
   function rentRows(l) {
     if (l.search_type === 'Buy') return [];
     var rows = [];
@@ -27,12 +27,12 @@
       if (/^\d+(\.\d+)?$/.test(digits)) {
         var mn = Math.round(Number(digits));
         rows.push(['Maintenance', '+ ' + inr(mn) + '/mo']);
-        if (l.monthly_rent) rows.push(['Monthly total', inr(Number(l.monthly_rent) + mn), true]);
+        if (l.monthly_rent) rows.push(['Monthly Total', inr(Number(l.monthly_rent) + mn), true]);
       } else {
         rows.push(['Maintenance', m.charAt(0).toUpperCase() + m.slice(1)]);
       }
     }
-    if (l.deposit_amount) rows.push(['Security deposit', inr(l.deposit_amount)]);
+    if (l.deposit_amount) rows.push(['Security Deposit', inr(l.deposit_amount)]);
     return rows;
   }
   function priceText(l) {

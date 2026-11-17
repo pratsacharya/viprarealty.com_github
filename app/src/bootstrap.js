@@ -9,8 +9,17 @@ const fields = require('./fields');
 // Change this list (and redeploy) to add/remove/reorder sub-categories;
 // ensureCategoryTree() reconciles the live DB to match on each startup.
 const CATEGORY_TREE = {
-  Residential: ['Flats', 'Villas', 'Pent House', 'Independent House', 'Independent Plots'],
+  Residential: ['Flat', 'Villa', 'Pent House', 'Independent House', 'Independent Plot'],
   Commercial: ['Office Space', 'Retail Store', 'Warehouse', 'Land'],
+};
+
+// Sub-categories renamed in place (old name -> new name). ensureCategoryTree()
+// renames the live rows before reconciling, so listings keep their sub-category.
+// Old names also stay accepted by the CSV importer.
+const RENAMED_SUBS = {
+  'Flats': 'Flat',
+  'Villas': 'Villa',
+  'Independent Plots': 'Independent Plot',
 };
 
 async function ensureSchema() {
@@ -69,6 +78,19 @@ async function ensureCategoryTree() {
       await conn.query('INSERT IGNORE INTO categories (name) VALUES (?)', [cat]);
       const [[c]] = await conn.query('SELECT id FROM categories WHERE name=?', [cat]);
       const catId = c.id;
+      // rename first; if both names exist, move listings onto the new one and drop the old
+      for (const [oldName, newName] of Object.entries(RENAMED_SUBS)) {
+        if (!subs.includes(newName)) continue;
+        const [[o]] = await conn.query('SELECT id FROM sub_categories WHERE category_id=? AND name=?', [catId, oldName]);
+        if (!o) continue;
+        const [[n]] = await conn.query('SELECT id FROM sub_categories WHERE category_id=? AND name=?', [catId, newName]);
+        if (n) {
+          await conn.query('UPDATE properties SET sub_category_id=? WHERE sub_category_id=?', [n.id, o.id]);
+          await conn.query('DELETE FROM sub_categories WHERE id=?', [o.id]);
+        } else {
+          await conn.query('UPDATE sub_categories SET name=? WHERE id=?', [newName, o.id]);
+        }
+      }
       for (const s of subs) {
         await conn.query(
           'INSERT INTO sub_categories (category_id, name) SELECT ?, ? FROM DUAL ' +
@@ -144,4 +166,4 @@ function dbMessage(e) {
   return msg;
 }
 
-module.exports = { ensureSchema, dbMessage, ensureCategoryTree, dropLegacyColumns, ensureFieldsTable, backfillHighlights, CATEGORY_TREE };
+module.exports = { ensureSchema, dbMessage, ensureCategoryTree, dropLegacyColumns, ensureFieldsTable, backfillHighlights, CATEGORY_TREE, RENAMED_SUBS };

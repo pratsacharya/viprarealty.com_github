@@ -55,7 +55,7 @@ const VILLAS_COMMON = [
 
 const HIGHLIGHTS = {
   // ---------- Residential ----------
-  'Flats': FLATS,
+  'Flat': FLATS,
   'Pent House': [
     ...FLATS,
     t('terrace_area', 'Terrace Area (sq ft)'),
@@ -63,7 +63,7 @@ const HIGHLIGHTS = {
     s('private_pool', 'Private Pool / Jacuzzi', YES_NO),
     s('private_lift', 'Private Lift', YES_NO),
   ],
-  'Villas': [
+  'Villa': [
     ...VILLAS_COMMON,
     s('private_pool', 'Private Pool', YES_NO),
     t('car_parking', 'Car Parking'),
@@ -84,7 +84,7 @@ const HIGHLIGHTS = {
     t('title_type', 'Khata / Title Type'),
     s('occupancy_certificate', 'Occupancy Certificate', YES_NO),
   ],
-  'Independent Plots': [
+  'Independent Plot': [
     t('plot_area', 'Plot Area (sq ft)', { col: 'builtup_area' }),
     t('dimensions', 'Dimensions (ft)', { placeholder: '30 x 40' }),
     t('frontage_ft', 'Frontage (ft)'), t('road_width_ft', 'Road Width (ft)'),

@@ -83,7 +83,7 @@ These three columns are dropped from `schema.sql` and from any live DB automatic
 `bootstrap.js` exports **`CATEGORY_TREE`** — the canonical category → sub-category map:
 
 ```
-Residential: Flats, Villas, Pent House, Independent House, Independent Plots
+Residential: Flat, Villa, Pent House, Independent House, Independent Plot
 Commercial:  Office Space, Retail Store, Warehouse, Land
 ```
 

@@ -234,7 +234,7 @@ select.field.auto { width: auto; }
 .footer-logo img { height: 28px; width: auto; }
 .footer-bar { border-top: 1px solid #1E242E; }
 .footer-bar .wrap { padding-block: 20px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 13px; color: #8A93A1; }
-.site-footer.compact .wrap { padding-block: 36px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 14px; }
+.site-footer.compact > .wrap { padding-block: 36px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 14px; }
 
 /* Floating WhatsApp */
 .wa-float {

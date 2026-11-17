@@ -125,6 +125,21 @@ async function ensureFieldsTable() {
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
 }
 
+// Rent listings: maintenance moved from the Highlights section to the price
+// section (properties.maintenance). Add the column if missing, then copy a
+// Highlights value across once for rent listings that have none yet.
+async function ensureMaintenanceColumn() {
+  const [[{ n }]] = await pool.query(
+    "SELECT COUNT(*) n FROM information_schema.COLUMNS " +
+      "WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='properties' AND COLUMN_NAME='maintenance'");
+  if (n === 0) await pool.query('ALTER TABLE properties ADD COLUMN maintenance VARCHAR(80) NULL AFTER deposit_amount');
+  await pool.query(
+    `UPDATE properties p JOIN property_fields f
+       ON f.property_id=p.id AND f.grp='highlight' AND f.field_key IN ('maintenance','maintenance_cam') AND f.value<>''
+     SET p.maintenance=LEFT(f.value, 80)
+     WHERE p.search_type='Rent' AND (p.maintenance IS NULL OR p.maintenance='')`);
+}
+
 // Copy the old spec columns (bedrooms, carpet area, floor, ...) into highlight
 // rows for listings that have none yet — existing listings and CSV imports.
 // Idempotent: a listing with any highlight row is left alone.
@@ -166,4 +181,4 @@ function dbMessage(e) {
   return msg;
 }
 
-module.exports = { ensureSchema, dbMessage, ensureCategoryTree, dropLegacyColumns, ensureFieldsTable, backfillHighlights, CATEGORY_TREE, RENAMED_SUBS };
+module.exports = { ensureSchema, dbMessage, ensureCategoryTree, dropLegacyColumns, ensureFieldsTable, ensureMaintenanceColumn, backfillHighlights, CATEGORY_TREE, RENAMED_SUBS };

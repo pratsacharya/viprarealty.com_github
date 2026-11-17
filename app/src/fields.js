@@ -8,6 +8,9 @@
  *   AMENITIES    same list for every type; tick + optional value
  *   FURNISHINGS  only for furnished rentals (see furnishingsApply); optional values
  *
+ * `rentOnly` / `buyOnly` limit a highlight to one search type (rent listings
+ * enter maintenance in the price section instead).
+ *
  * `col` marks a highlight that also feeds a legacy properties column, which the
  * listing cards and filters still read.
  */
@@ -29,7 +32,7 @@ const ceiling = t('ceiling_height', 'Ceiling Height (ft)', { col: 'ceiling_heigh
 const powerBackup = s('power_backup', 'Power Backup', POWER_BACKUP);
 const powerLoad = t('power_load_kva', 'Power Load (kVA)');
 const washrooms = t('washrooms', 'Washrooms', { col: 'bathrooms' });
-const cam = t('maintenance_cam', 'Maintenance / CAM (₹/sq ft)');
+const cam = t('maintenance_cam', 'Maintenance / CAM (₹/sq ft)', { buyOnly: true });
 
 const FLATS = [
   carpet, builtup, t('super_builtup', 'Super Built-up (sq ft)'),
@@ -38,7 +41,7 @@ const FLATS = [
   s('main_door_facing', 'Main Door Facing', FACING),
   s('balcony_facing', 'Balcony Facing', FACING),
   t('car_parking', 'Car Parking'), t('property_age', 'Age of Property'),
-  t('maintenance', 'Maintenance (₹/month)'), powerBackup,
+  t('maintenance', 'Maintenance (₹/month)', { buyOnly: true }), powerBackup,
   t('water_supply', 'Water Supply'),
   s('preferred_tenant', 'Preferred Tenant', ['Family', 'Bachelors', 'Company lease', 'Any'], { rentOnly: true }),
   s('occupancy_certificate', 'Occupancy Certificate', YES_NO),
@@ -71,7 +74,7 @@ const HIGHLIGHTS = {
     s('gated_community', 'Gated Community', YES_NO),
     t('road_width_ft', 'Road Width (ft)'),
     s('water_source', 'Water Source', ['Municipal', 'Borewell', 'Both']),
-    powerBackup, t('maintenance', 'Maintenance (₹/month)'),
+    powerBackup, t('maintenance', 'Maintenance (₹/month)', { buyOnly: true }),
     s('occupancy_certificate', 'Occupancy Certificate', YES_NO),
   ],
   'Independent House': [
@@ -80,7 +83,7 @@ const HIGHLIGHTS = {
     s('servant_quarters', 'Servant Quarters', YES_NO),
     t('road_width_ft', 'Road Width (ft)'),
     s('water_source', 'Water Source', ['Municipal', 'Borewell', 'Both']),
-    powerBackup, t('maintenance', 'Maintenance (₹/month)'),
+    powerBackup, t('maintenance', 'Maintenance (₹/month)', { buyOnly: true }),
     t('title_type', 'Khata / Title Type'),
     s('occupancy_certificate', 'Occupancy Certificate', YES_NO),
   ],

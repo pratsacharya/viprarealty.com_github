@@ -55,6 +55,7 @@ const _boot = require('./src/bootstrap');
 _boot.dropLegacyColumns()
   .then(() => _boot.ensureCategoryTree())
   .then(() => _boot.ensureFieldsTable())
+  .then(() => _boot.ensureMaintenanceColumn())
   .then(() => _boot.backfillHighlights())
   .then(() => console.log('Schema migrations + category tree reconciled'))
   .catch((e) => console.error('Startup DB maintenance skipped:', e.code || e.message));

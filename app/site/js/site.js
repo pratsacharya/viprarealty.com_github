@@ -15,15 +15,25 @@
   }
   function imgSrc(p) { return /^https?:/.test(p) ? p : ('/' + String(p).replace(/^\/+/, '')); }
 
-  // Maintenance next to the rent: a number reads "+ ₹5,000 maintenance",
-  // text reads "− Maintenance included". Empty, or a sale listing -> ''.
-  function maintenanceText(l) {
+  // Rent breakdown rows for the property page price box (rent listings only):
+  // Maintenance ("+ ₹5,000/mo" for a number, the text as entered otherwise),
+  // Monthly total when maintenance is a number, then Security deposit.
+  function rentRows(l) {
+    if (l.search_type === 'Buy') return [];
+    var rows = [];
     var m = String(l.maintenance == null ? '' : l.maintenance).trim();
-    if (!m || l.search_type === 'Buy') return '';
-    var digits = m.replace(/[₹,\s]/g, '').replace(/^rs\.?/i, '');
-    if (/^\d+(\.\d+)?$/.test(digits)) return '+ ' + inr(Math.round(Number(digits))) + ' maintenance';
-    if (/^maintenance\b/i.test(m)) return '− ' + m;
-    return '− Maintenance ' + (/^[A-Z][a-z]/.test(m) ? m.charAt(0).toLowerCase() + m.slice(1) : m);
+    if (m) {
+      var digits = m.replace(/[₹,\s]/g, '').replace(/^rs\.?/i, '');
+      if (/^\d+(\.\d+)?$/.test(digits)) {
+        var mn = Math.round(Number(digits));
+        rows.push(['Maintenance', '+ ' + inr(mn) + '/mo']);
+        if (l.monthly_rent) rows.push(['Monthly total', inr(Number(l.monthly_rent) + mn), true]);
+      } else {
+        rows.push(['Maintenance', m.charAt(0).toUpperCase() + m.slice(1)]);
+      }
+    }
+    if (l.deposit_amount) rows.push(['Security deposit', inr(l.deposit_amount)]);
+    return rows;
   }
   function priceText(l) {
     if (l.search_type === 'Buy') return l.sale_price ? inrShort(l.sale_price) : 'Price on request';
@@ -63,7 +73,7 @@
       '<div class="row"><div class="ttl"><h3>' + esc(title) + '</h3>' +
         '<p class="loc">' + esc([l.locality, l.city].filter(Boolean).join(', ')) + '</p></div>' +
         '<span class="price-col"><span class="price">' + priceText(l) + '</span>' +
-        (dep ? '<span class="dep">' + dep + ' deposit</span>' : '') + '</span></div>' +
+        (dep ? '<span class="dep">Deposit ' + dep + '</span>' : '') + '</span></div>' +
       (sp.length ? '<p class="specs">' + sp.map(esc).join(' · ') + (l.sub_category ? ' · ' + esc(l.sub_category) : '') + '</p>' : '') +
       '</a></article>';
   }
@@ -305,10 +315,13 @@
       set('d-loc', place);
       set('d-price-label', l.search_type === 'Buy' ? 'Sale price' : 'Monthly rent');
       setHTML('d-price', priceText(l));
-      var dEl = document.getElementById('d-dep'), dt = (l.search_type !== 'Buy' && l.deposit_amount) ? inr(l.deposit_amount) + ' deposit' : '';
-      if (dEl) { dEl.textContent = dt; dEl.hidden = !dt; }
-      var mt = maintenanceText(l), mEl = document.getElementById('d-maint');
-      if (mEl) { mEl.textContent = mt; mEl.hidden = !mt; }
+      var rr = rentRows(l), rEl = document.getElementById('d-rent-rows');
+      if (rEl) {
+        rEl.innerHTML = rr.map(function (r) {
+          return '<div class="rr' + (r[2] ? ' rr-total' : '') + '"><span>' + esc(r[0]) + '</span><span>' + esc(r[1]) + '</span></div>';
+        }).join('');
+        rEl.hidden = !rr.length;
+      }
       var b = badge(l);
       setHTML('d-badges', '' +
         (l.category ? '<span class="badge">' + esc(l.category + (l.sub_category ? ' · ' + l.sub_category : '')) + '</span>' : '') +

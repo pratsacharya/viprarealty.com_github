@@ -433,4 +433,4 @@ select.field.auto { width: auto; }
 .legal li { margin-bottom: 6px; }
 .legal a { color: var(--teal, #0F6E6A); }
 .legal .legal-note { margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 13px; color: #6B7482; }
-.site-footer.compact .footer-links { margin-right: 72px; }
+.footer-bar .footer-links { margin-right: 72px; }

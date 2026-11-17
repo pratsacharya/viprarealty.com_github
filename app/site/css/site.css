@@ -360,8 +360,8 @@ select.field.auto { width: auto; }
 .side-card { border: 1px solid var(--line); border-radius: var(--r-xl); padding: 26px; background: #fff; }
 .side-card .price-label { font-size: 13px; color: var(--muted); }
 .side-card .price { font-family: var(--font-disp); font-size: 32px; font-weight: 700; margin-top: 4px; }
-.side-card .rent-rows { margin-top: 14px; }
-.side-card .rr { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.side-card .rent-rows { margin-top: 10px; }
+.side-card .rr { display: flex; justify-content: space-between; gap: 16px; padding: 6px 0; border-top: 1px solid var(--line); font-size: 14px; line-height: 1.4; }
 .side-card .rr span:first-child { color: var(--muted); }
 .side-card .rr span:last-child { font-weight: 500; text-align: right; }
 .side-card .rr-total span:last-child { font-weight: 700; }

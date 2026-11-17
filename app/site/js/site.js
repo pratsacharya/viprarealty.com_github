@@ -56,11 +56,14 @@
       ? '<img src="' + esc(imgSrc(l.images[0])) + '" alt="" loading="lazy">'
       : PLACEHOLDER;
     var sp = specs(l);
+    var dep = (l.search_type !== 'Buy' && l.deposit_amount) ? inrShort(l.deposit_amount) : '';
     return '' +
       '<article class="card' + (closed ? ' is-closed' : '') + '"><a href="property-detail.html?id=' + l.id + '">' +
       '<div class="media">' + media + '<span class="pill' + (closed ? ' pill-dark' : '') + '">' + b[0] + '</span></div>' +
-      '<div class="row"><h3>' + esc(title) + '</h3><span class="price">' + priceText(l) + '</span></div>' +
-      '<p class="loc">' + esc([l.locality, l.city].filter(Boolean).join(', ')) + '</p>' +
+      '<div class="row"><div class="ttl"><h3>' + esc(title) + '</h3>' +
+        '<p class="loc">' + esc([l.locality, l.city].filter(Boolean).join(', ')) + '</p></div>' +
+        '<span class="price-col"><span class="price">' + priceText(l) + '</span>' +
+        (dep ? '<span class="dep">' + dep + ' deposit</span>' : '') + '</span></div>' +
       (sp.length ? '<p class="specs">' + sp.map(esc).join(' · ') + (l.sub_category ? ' · ' + esc(l.sub_category) : '') + '</p>' : '') +
       '</a></article>';
   }
@@ -302,6 +305,8 @@
       set('d-loc', place);
       set('d-price-label', l.search_type === 'Buy' ? 'Sale price' : 'Monthly rent');
       setHTML('d-price', priceText(l));
+      var dEl = document.getElementById('d-dep'), dt = (l.search_type !== 'Buy' && l.deposit_amount) ? inr(l.deposit_amount) + ' deposit' : '';
+      if (dEl) { dEl.textContent = dt; dEl.hidden = !dt; }
       var mt = maintenanceText(l), mEl = document.getElementById('d-maint');
       if (mEl) { mEl.textContent = mt; mEl.hidden = !mt; }
       var b = badge(l);

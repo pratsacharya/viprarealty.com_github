@@ -7,7 +7,7 @@ const multer = require('multer');
 const pool = require('../src/db');
 const { requireLogin, requireMaster, csrfToken, checkCsrf } = require('../src/middleware');
 const { sendSms } = require('../src/mailer');
-const { ensureSchema, dbMessage, CATEGORY_TREE, backfillHighlights } = require('../src/bootstrap');
+const { ensureSchema, dbMessage, CATEGORY_TREE, backfillHighlights, RENAMED_SUBS } = require('../src/bootstrap');
 const fields = require('../src/fields');
 
 // canonical display order for sub-categories, from the tree
@@ -367,6 +367,10 @@ router.post('/import', requireMaster, uploadCsv.single('csv'), async (req, res) 
   const [subRows] = await pool.query('SELECT id,name FROM sub_categories');
   const catMap = Object.fromEntries(catRows.map((r) => [r.name.toLowerCase(), r.id]));
   const subMap = Object.fromEntries(subRows.map((r) => [r.name.toLowerCase(), r.id]));
+  // old plural names in older CSV files still map to the renamed sub-category
+  for (const [oldName, newName] of Object.entries(RENAMED_SUBS)) {
+    if (subMap[newName.toLowerCase()]) subMap[oldName.toLowerCase()] = subMap[newName.toLowerCase()];
+  }
   const statusMap = { 'active': 'active', 'inactive': 'inactive', 'sold out': 'sold_out', 'rented out': 'rented_out' };
   const dig = (v) => { v = (v || '').replace(/[^0-9]/g, ''); return v === '' ? null : parseInt(v, 10); };
 

@@ -96,7 +96,7 @@ async function attachFields(rows) {
       if (!f || !f.display || (needValue && !f.value)) return null;
       return { key: d.key, label: d.label, value: f.value };
     }).filter(Boolean);
-    const all = fields.highlightsFor(r.sub_category).filter((d) => !d.rentOnly || r.search_type === 'Rent');
+    const all = fields.highlightsFor(r.sub_category).filter((d) => (!d.rentOnly || r.search_type === 'Rent') && (!d.buyOnly || r.search_type === 'Buy'));
     r.highlights = pick('highlight', all, true);
     r.amenities = pick('amenity', fields.AMENITIES, false);
     const furnishing = (mine['highlight:furnishing'] || {}).value;

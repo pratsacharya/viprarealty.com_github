@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS properties (
   sale_price BIGINT NULL,
   monthly_rent BIGINT NULL,
   deposit_amount BIGINT NULL,
+  maintenance VARCHAR(80) NULL,
   down_payment BIGINT NULL,
   possession_date VARCHAR(40) NULL,
   bedrooms INT NULL,

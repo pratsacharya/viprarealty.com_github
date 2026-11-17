@@ -170,7 +170,7 @@ router.get('/properties/:id/images/prune', requireMaster, checkCsrf, async (req,
 
 // ---------- add / edit ----------
 const PROP_FIELDS = ['project_title', 'description', 'search_type',
-  'category_id', 'sub_category_id', 'city', 'locality', 'sale_price', 'monthly_rent', 'deposit_amount', 'down_payment',
+  'category_id', 'sub_category_id', 'city', 'locality', 'sale_price', 'monthly_rent', 'deposit_amount', 'maintenance', 'down_payment',
   'possession_date', 'bedrooms', 'bathrooms', 'carpet_area', 'builtup_area', 'total_floors', 'floor_no',
   'ceiling_height', 'status', 'featured'];
 
@@ -201,7 +201,7 @@ function readFieldValues(body, subName, searchType) {
   const out = { highlight: {}, amenity: {}, furnishing: {} };
   const hl = obj('hl'), show = obj('hl_show'), am = obj('am'), amOn = obj('am_on'), fu = obj('fu');
   for (const f of fields.highlightsFor(subName)) {
-    if (f.rentOnly && searchType !== 'Rent') continue;
+    if ((f.rentOnly && searchType !== 'Rent') || (f.buyOnly && searchType !== 'Buy')) continue;
     let v = txt(hl[f.key]);
     if (f.type === 'select' && v && !f.options.includes(v)) v = '';
     if (v) out.highlight[f.key] = { value: v, display: !!show[f.key] };
@@ -244,6 +244,7 @@ router.post('/property-edit', upload.array('images', 20), async (req, res) => {
     description: str('description'), search_type: str('search_type') === 'Buy' ? 'Buy' : 'Rent',
     category_id: num('category_id'), sub_category_id: num('sub_category_id'), city: str('city'), locality: str('locality'),
     sale_price: num('sale_price'), monthly_rent: num('monthly_rent'), deposit_amount: num('deposit_amount'),
+    maintenance: str('maintenance').slice(0, 80) || null,
     down_payment: num('down_payment'), possession_date: str('possession_date'),
     status: ['active', 'inactive', 'sold_out', 'rented_out'].includes(str('status')) ? str('status') : 'active',
     featured: req.body.featured ? 1 : 0,
@@ -251,7 +252,7 @@ router.post('/property-edit', upload.array('images', 20), async (req, res) => {
 
   // only the price fields of the chosen search type are kept
   if (data.search_type === 'Rent') { data.sale_price = null; data.down_payment = null; }
-  else { data.monthly_rent = null; data.deposit_amount = null; }
+  else { data.monthly_rent = null; data.deposit_amount = null; data.maintenance = null; }
 
   // extra fields for this listing's type; the old spec columns follow the highlights
   const [[subRow]] = await pool.query('SELECT name FROM sub_categories WHERE id=?', [data.sub_category_id || 0]);

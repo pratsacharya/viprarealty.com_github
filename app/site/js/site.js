@@ -15,6 +15,16 @@
   }
   function imgSrc(p) { return /^https?:/.test(p) ? p : ('/' + String(p).replace(/^\/+/, '')); }
 
+  // Maintenance next to the rent: a number reads "+ ₹5,000 maintenance",
+  // text reads "− Maintenance included". Empty, or a sale listing -> ''.
+  function maintenanceText(l) {
+    var m = String(l.maintenance == null ? '' : l.maintenance).trim();
+    if (!m || l.search_type === 'Buy') return '';
+    var digits = m.replace(/[₹,\s]/g, '').replace(/^rs\.?/i, '');
+    if (/^\d+(\.\d+)?$/.test(digits)) return '+ ' + inr(Math.round(Number(digits))) + ' maintenance';
+    if (/^maintenance\b/i.test(m)) return '− ' + m;
+    return '− Maintenance ' + (/^[A-Z][a-z]/.test(m) ? m.charAt(0).toLowerCase() + m.slice(1) : m);
+  }
   function priceText(l) {
     if (l.search_type === 'Buy') return l.sale_price ? inrShort(l.sale_price) : 'Price on request';
     return l.monthly_rent ? inr(l.monthly_rent) + '<small>/mo</small>' : 'Rent on request';
@@ -292,6 +302,8 @@
       set('d-loc', place);
       set('d-price-label', l.search_type === 'Buy' ? 'Sale price' : 'Monthly rent');
       setHTML('d-price', priceText(l));
+      var mt = maintenanceText(l), mEl = document.getElementById('d-maint');
+      if (mEl) { mEl.textContent = mt; mEl.hidden = !mt; }
       var b = badge(l);
       setHTML('d-badges', '' +
         (l.category ? '<span class="badge">' + esc(l.category + (l.sub_category ? ' · ' + l.sub_category : '')) + '</span>' : '') +

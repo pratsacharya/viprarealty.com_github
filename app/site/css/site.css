@@ -433,7 +433,8 @@ select.field.auto { width: auto; }
 .legal li { margin-bottom: 6px; }
 .legal a { color: var(--teal, #0F6E6A); }
 .legal .legal-note { margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 13px; color: #6B7482; }
-.footer-bar .footer-links { margin-right: 72px; }
+/* Links flush right; on narrower desktops leave room under them for the WhatsApp button */
+@media (min-width: 761px) and (max-width: 1340px) { .footer-bar .wrap { padding-bottom: 92px; } }
 
 /* Home footer: logo block left, Explore + Get in touch pushed to the right edge (desktop) */
 @media (min-width: 1025px) {

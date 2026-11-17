@@ -434,3 +434,9 @@ select.field.auto { width: auto; }
 .legal a { color: var(--teal, #0F6E6A); }
 .legal .legal-note { margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 13px; color: #6B7482; }
 .footer-bar .footer-links { margin-right: 72px; }
+
+/* Home footer: logo block left, Explore + Get in touch pushed to the right edge (desktop) */
+@media (min-width: 1025px) {
+  .footer-grid { grid-template-columns: 1fr auto auto; column-gap: 80px; }
+  .footer-grid > * { grid-column: auto; }
+}

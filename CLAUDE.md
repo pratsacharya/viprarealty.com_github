@@ -128,10 +128,13 @@ ID, basics, price fields (`- Buy` / `- Rent` suffix), the sub-category's highlig
 Import rules: blank Property ID → insert; existing ID → update that listing (sub-category = sheet, so
 moving a row to another sheet re-files it); unknown ID / duplicate ID / missing mandatory → row reported,
 not saved. An empty cell clears the value. Listings are never deleted. Highlight "show on site" flags are
-kept for existing keys, new values default to shown. **Photo links** only manage `http(s)` image rows;
-uploaded photos are never touched. Google Drive / Dropbox share links are rewritten to direct image URLs
-(`lh3.googleusercontent.com/d/<id>`), and each link is fetched at import: a link that does not return
-`image/*` (e.g. a Drive file not shared as "Anyone with the link") is skipped and listed in `report.warnings`.
+kept for existing keys, new values default to shown. **Photo links** are downloaded at import into UPLOAD_DIR (jpg/png/webp/gif, 8 MB, same as admin uploads);
+`property_images.source_url` keeps the link (column added by `ensureImageSourceColumn()`). Google Drive / Dropbox
+share links are first rewritten to direct image URLs (`lh3.googleusercontent.com/d/<id>`). A link already stored
+for that listing is not fetched again; a link removed from the cell deletes that photo and its file; older rows
+whose `file_path` is a web URL are converted on the next import. Export lists `source_url` (or the web URL).
+Admin-uploaded photos (no `source_url`) are never touched. A link that does not return an image (e.g. a private
+Drive file) is skipped and listed in `report.warnings`.
 Each row saves in its own transaction. Headers are matched by text —
 renaming a field label in `fields.js` changes the header, so re-export after such a change. An unchanged
 export → import round trip leaves the data identical (verified).

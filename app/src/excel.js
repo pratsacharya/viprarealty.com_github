@@ -8,7 +8,8 @@
  *   - blank            -> the row is added as a new listing
  *   - an existing ID   -> that listing is updated from the row
  * An empty cell clears that value. Uploaded photos are never touched by import;
- * the Photo links column only manages photos given as web links.
+ * the Photo links column only manages photos given as web links. Each linked photo
+ * is downloaded into the uploads folder (property_images.source_url keeps the link).
  *
  * Headers are matched by text, so columns can be reordered but not renamed.
  * Mandatory headers are dark green.
@@ -17,6 +18,9 @@ const ExcelJS = require('exceljs');
 const pool = require('./db');
 const fields = require('./fields');
 const { CATEGORY_TREE } = require('./bootstrap');
+const fs = require('fs');
+const crypto = require('crypto');
+const { diskPath, isLocal, isMissing } = require('./uploads');
 
 const CITIES = ['Bangalore', 'Mumbai', 'Navi Mumbai', 'Thane'];
 const STATUS = { active: 'Active', inactive: 'Inactive', sold_out: 'Sold out', rented_out: 'Rented out' };
@@ -59,7 +63,7 @@ function columnsFor(subName) {
       cols.push(c('Furnishing: ' + f.label, { kind: 'fu', key: f.key, width: 18, note: 'Rent listings that are semi- or fully furnished. Yes, or a count/note (e.g. 4).' }));
     }
   }
-  cols.push(c('Photo links', { kind: 'photos', width: 40, note: 'Web links to photos, separated by commas. Google Drive links work when the file is shared as "Anyone with the link". Photos uploaded in the admin are not listed here and are never changed by import.' }));
+  cols.push(c('Photo links', { kind: 'photos', width: 40, note: 'Web links to photos, separated by commas. Each photo is downloaded and saved on the website. Google Drive links work when the file is shared as "Anyone with the link". Photos uploaded in the admin are not listed here and are never changed by import.' }));
   return cols;
 }
 
@@ -78,8 +82,8 @@ async function buildWorkbook({ withData }) {
     [props] = await pool.query('SELECT * FROM properties ORDER BY id');
     const [frows] = await pool.query('SELECT property_id, grp, field_key, value FROM property_fields');
     for (const r of frows) ((fv[r.property_id] ||= {})[r.grp] ||= {})[r.field_key] = r.value;
-    const [imgs] = await pool.query('SELECT property_id, file_path FROM property_images ORDER BY sort_order, id');
-    for (const i of imgs) if (/^https?:/i.test(i.file_path)) (photos[i.property_id] ||= []).push(i.file_path);
+    const [imgs] = await pool.query('SELECT property_id, file_path, source_url FROM property_images ORDER BY sort_order, id');
+    for (const i of imgs) { const k = linkOf(i); if (k) (photos[i.property_id] ||= []).push(k); }
   }
 
   for (const subName of SUB_NAMES()) {
@@ -154,6 +158,7 @@ function addInstructions(wb) {
     ['Furnishing columns are used for Rent listings marked Semi-furnished or Fully furnished (Furnished for offices).'],
     ['Photo links: web links to photos, separated by commas. Photos uploaded in the admin are kept and are not listed here.'],
     ['Google Drive photos: in Drive, Share → General access → "Anyone with the link", then Copy link and paste it here.'],
+    ['Linked photos are downloaded and saved on the website when you import, so they keep showing even if you later delete them from Drive. Remove a link from the cell to remove that photo from the listing.'],
     ['Highlights you hid with "Show on site" stay hidden; new values are shown.'],
     [''],
     ['Tip: download "Export all listings" first, edit that file, then import it. Do not rename sheets or headings.'],
@@ -238,16 +243,28 @@ function directImageUrl(u) {
   return u;
 }
 
-// True when the link opens a picture for anyone (no sign-in needed).
-async function isPublicImage(u) {
-  if (typeof fetch !== 'function') return true;     // cannot check: accept it
+// The link a photo row is managed by: the link it was downloaded from, or the
+// web address it is shown from (older imports). Uploaded photos have none.
+const linkOf = (i) => i.source_url || (/^https?:/i.test(i.file_path) ? i.file_path : null);
+
+const IMG_EXT = { 'image/jpeg': 'jpg', 'image/jpg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif' };
+const MAX_PHOTO = 8 * 1024 * 1024;   // same limit as admin uploads
+
+// Download a photo link into the uploads folder. Returns 'uploads/<file>' or null
+// when the link does not open a public image (e.g. a private Drive file).
+async function downloadImage(u) {
   try {
-    const res = await fetch(u, { redirect: 'follow', signal: AbortSignal.timeout(15000) });
-    const ok = res.ok && /^image\//i.test(res.headers.get('content-type') || '');
-    try { await res.body?.cancel(); } catch (_) { /* ignore */ }
-    return ok;
-  } catch (_) { return false; }
+    const res = await fetch(u, { redirect: 'follow', signal: AbortSignal.timeout(30000) });
+    const ext = IMG_EXT[(res.headers.get('content-type') || '').split(';')[0].trim().toLowerCase()];
+    if (!res.ok || !ext) { try { await res.body?.cancel(); } catch (_) { /* ignore */ } return null; }
+    const buf = Buffer.from(await res.arrayBuffer());
+    if (!buf.length || buf.length > MAX_PHOTO) return null;
+    const name = 'uploads/p_' + Date.now() + '_' + crypto.randomBytes(4).toString('hex') + '.' + ext;
+    fs.writeFileSync(diskPath(name), buf);
+    return name;
+  } catch (_) { return null; }
 }
+const unlinkQuiet = (f) => { if (isLocal(f)) try { fs.unlinkSync(diskPath(f)); } catch (_) { /* ignore */ } };
 
 const fail = (m) => { const e = new Error(m); e.userMessage = m; throw e; };
 
@@ -323,16 +340,29 @@ async function saveRow(val, defs, sub, userId, seen) {
   Object.assign(data, fields.legacyColumns(sub.name,
     Object.fromEntries(Object.entries(fv.highlight).map(([k, f]) => [k, f.value]))));
 
-  let links = has('photos') ? (val.photos || '').split(/[,\n]+/).map((s) => s.trim()).filter((s) => /^https?:\/\//i.test(s)) : null;
-  const badLinks = [];
+  // Photo links: each link is downloaded into the uploads folder before saving.
+  // A link already downloaded for this listing is not fetched again.
+  const OWN = /^https?:\/\/(www\.)?viprarealty\.com\/uploads\//i;
+  const rawOf = {};                           // direct link -> link as typed, for messages
+  const links = has('photos') ? [...new Set((val.photos || '').split(/[,\n]+/).map((s) => s.trim())
+    .filter((s) => /^https?:\/\//i.test(s) && !OWN.test(s)).map((s) => { const d = directImageUrl(s); rawOf[d] ||= s; return d; }))] : null;
+  const badLinks = [], fetched = [];          // fetched: { key, file }
+  let managed = [], keep = new Set(), otherCount = 0;
   if (links) {
-    const good = [];
-    for (const raw of links) {
-      const u = directImageUrl(raw);
-      if (/^https?:\/\/(www\.)?viprarealty\.com\/uploads\//i.test(u) || await isPublicImage(u)) good.push(u); else badLinks.push(raw);
+    if (existing) {
+      const [imgs] = await pool.query('SELECT id, file_path, source_url FROM property_images WHERE property_id=?', [id]);
+      managed = imgs.filter(linkOf);
+      otherCount = imgs.length - managed.length;
     }
-    links = good;
+    for (const key of links) {
+      const m = managed.find((i) => linkOf(i) === key);
+      if (m && isLocal(m.file_path) && !isMissing(m.file_path)) { keep.add(m.id); continue; }
+      const file = await downloadImage(key);
+      if (file) fetched.push({ key, file, row: m });
+      else { badLinks.push(rawOf[key] || key); if (m) keep.add(m.id); }   // keep an older web-link row as it was
+    }
   }
+  const removed = [];
 
   const conn = await pool.getConnection();
   try {
@@ -352,23 +382,27 @@ async function saveRow(val, defs, sub, userId, seen) {
     if (frows.length) await conn.query('INSERT INTO property_fields (property_id,grp,field_key,value,display) VALUES ?', [frows]);
 
     if (links) {
-      // only web-link photos are managed here; uploaded photos stay as they are
-      const [imgs] = await conn.query('SELECT id, file_path FROM property_images WHERE property_id=?', [pid]);
-      const linkRows = imgs.filter((i) => /^https?:/i.test(i.file_path)).map((i) => i.id);
-      if (linkRows.length) await conn.query('DELETE FROM property_images WHERE id IN (?)', [linkRows]);
-      let have = imgs.length - linkRows.length;
-      const fresh = links.map((u) => u.replace(/^https?:\/\/(www\.)?viprarealty\.com\/(uploads\/)/i, '$2'))
-        .filter((u) => /^https?:/i.test(u));  // a link to one of our own uploads is already on the listing
-      for (const u of fresh) {
-        if (have >= 20) break;
-        await conn.query('INSERT INTO property_images (property_id,file_path,sort_order) VALUES (?,?,?)', [pid, u.slice(0, 500), have++]);
+      // only link-managed photos are changed here; uploaded photos stay as they are
+      const gone = managed.filter((i) => !keep.has(i.id) && !fetched.some((f) => f.row === i));
+      if (gone.length) await conn.query('DELETE FROM property_images WHERE id IN (?)', [gone.map((i) => i.id)]);
+      removed.push(...gone.map((i) => i.file_path));
+      let have = otherCount + keep.size + fetched.filter((f) => f.row).length;
+      for (const f of fetched) {
+        if (f.row) {
+          await conn.query('UPDATE property_images SET file_path=?, source_url=? WHERE id=?', [f.file, f.key.slice(0, 500), f.row.id]);
+          removed.push(f.row.file_path);
+        } else if (have < 20) {
+          await conn.query('INSERT INTO property_images (property_id,file_path,source_url,sort_order) VALUES (?,?,?,?)', [pid, f.file, f.key.slice(0, 500), have++]);
+        } else { unlinkQuiet(f.file); f.file = null; }
       }
     }
     await conn.commit();
+    removed.forEach(unlinkQuiet);
     if (id) seen.add(id);
     return { added: !existing, id: pid, badLinks };
   } catch (e) {
     await conn.rollback();
+    fetched.forEach((f) => f.file && unlinkQuiet(f.file));
     throw e;
   } finally {
     conn.release();

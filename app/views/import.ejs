@@ -1,18 +1,36 @@
-<% pageTitle = 'Import' %>
+<% pageTitle = 'Import / Export' %>
 <%- include('partials/header') %>
-<h1>Bulk import listings (CSV)</h1>
-<p class="muted">Open the Excel import template, choose <em>File → Save As → CSV</em>, then upload that CSV here. Columns are matched by header name; Category / Sub-category match the seeded lists; Status accepts Active / Inactive / Sold out / Rented out.</p>
+<h1>Import / Export listings (Excel)</h1>
+<p class="muted">One sheet per sub-category with every field from the property form. Dark green headings are mandatory.
+  Leave <strong>Property ID</strong> blank to add a listing; keep the ID to update that listing. An empty cell clears that value.
+  Listings are never deleted by import. Set Status to <em>Inactive</em> to hide one.</p>
+
+<div class="ie-grid">
+  <section class="ie-card">
+    <h2>1. Download</h2>
+    <p class="muted">Start from your current listings, or a blank template.</p>
+    <a class="btn" href="/adminvr/export.xlsx">Export all listings</a>
+    <a class="btn ghost" href="/adminvr/template.xlsx">Blank template</a>
+  </section>
+
+  <section class="ie-card">
+    <h2>2. Import</h2>
+    <p class="muted">Upload the edited Excel file (.xlsx).</p>
+    <form method="post" action="/adminvr/import" enctype="multipart/form-data">
+      <input type="hidden" name="csrf" value="<%= csrf %>">
+      <input type="file" name="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
+      <button class="btn" type="submit" style="margin-top:12px">Import</button>
+    </form>
+  </section>
+</div>
+
 <% if (report) { %>
   <% if (report.err) { %>
     <p class="note err"><%= report.err %></p>
   <% } else { %>
-    <p class="note ok">Imported <%= report.ok %> of <%= report.total %> rows. Failed: <%= report.fail %>.</p>
-    <% if (report.errors && report.errors.length) { %><pre class="note err" style="white-space:pre-wrap"><%= report.errors.join('\n') %></pre><% } %>
+    <p class="note <%= report.failed ? 'err' : 'ok' %>">Added <%= report.added %>, updated <%= report.updated %>, failed <%= report.failed %>.</p>
+    <% if (report.added_ids.length) { %><p class="muted" style="margin-top:12px">New listings:</p><pre class="note ok" style="white-space:pre-wrap"><%= report.added_ids.join('\n') %></pre><% } %>
+    <% if (report.errors.length) { %><p class="muted" style="margin-top:12px">Rows not saved (fix them and import again):</p><pre class="note err" style="white-space:pre-wrap"><%= report.errors.join('\n') %></pre><% } %>
   <% } %>
 <% } %>
-<form method="post" action="/adminvr/import" enctype="multipart/form-data" style="max-width:480px">
-  <input type="hidden" name="csrf" value="<%= csrf %>">
-  <label>CSV file<input type="file" name="csv" accept=".csv,text/csv" required></label>
-  <button class="btn" type="submit" style="margin-top:14px">Import</button>
-</form>
 <%- include('partials/footer') %>

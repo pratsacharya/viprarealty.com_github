@@ -17,8 +17,8 @@ No buyer accounts, no payments. Two sides:
 - **MySQL** via `mysql2/promise` (`app/src/db.js` connection pool).
 - **EJS** templates for the admin panel (`app/views/`).
 - **Vanilla JS** public site (`app/site/js/site.js`) — **no build step**, static HTML served directly.
-- Auth: `express-session` + `bcryptjs`. Uploads: `multer`. CSV import: `csv-parse`. SMS: MSG91 (optional).
-- Dependencies: `express, mysql2, ejs, express-session, bcryptjs, multer, csv-parse, dotenv`.
+- Auth: `express-session` + `bcryptjs`. Uploads: `multer`. Excel import/export: `exceljs`. SMS: MSG91 (optional).
+- Dependencies: `express, mysql2, ejs, express-session, bcryptjs, multer, exceljs, dotenv`.
 
 ## 3. Repo map
 
@@ -35,6 +35,7 @@ app/
     middleware.js     requireLogin / requireMaster / csrfToken / checkCsrf.
     fields.js         Type-aware field catalog: highlights per sub-category, amenities, furnishings.
     uploads.js        Upload folder (UPLOAD_DIR), file helpers, storage diagnostics.
+    excel.js          Excel bulk export (workbook per sub-category) + import (add / update by Property ID).
     mailer.js         sendSms (MSG91; no-op if MSG91_AUTHKEY unset) + notifyMasterEnquiry (stub/TODO).
   views/              EJS admin templates + partials/ (header, footer).
   site/               LIVE public site: index.html, properties.html, property-detail.html, contact.html,
@@ -44,7 +45,7 @@ app/
   uploads/            Property images at runtime — local default only (.gitkeep committed).
                       Production sets UPLOAD_DIR (src/uploads.js) so images survive deploys.
 design/               Original static mockups — REFERENCE ONLY. Live site is app/site/.
-docs/                 PRD (MD + Word), brief, Excel import template.
+docs/                 PRD (MD + Word), brief, blank Excel listings template (same as /adminvr/template.xlsx).
 ```
 
 ## 4. Running locally
@@ -108,12 +109,29 @@ Extra listing fields are a **fixed catalog in code**; values live in `property_f
 - **Old spec columns** (`bedrooms, bathrooms, carpet_area, builtup_area, ceiling_height, floor_no,
   total_floors`) are no longer on the form. Highlights marked `col` write them on save
   (`legacyColumns`) because the listing cards and filters still read them. `backfillHighlights()`
-  (startup + after CSV import) copies those columns into highlight rows for listings that have none.
+  (startup) copies those columns into highlight rows for listings that have none.
 - Admin form: `views/property-form.ejs` renders highlight rows client-side from the catalog for the
   selected sub-category. API: `/api/listings` adds `highlights[]`, `amenities[]`, `furnishings[]`
   (display flag + value applied). Detail page: first 4 highlights are the stat tiles, the rest
   "Property highlights", then Amenities and Furnishings.
 - **To change fields, edit `fields.js` and redeploy.** Renaming a key orphans stored values.
+
+## 6b. Excel import / export (`app/src/excel.js`)
+
+Admin page **Import / Export** (`/adminvr/import`, master only). One sheet per sub-category
+(`CATEGORY_TREE` order) plus a "How to use" sheet. Columns come from `columnsFor(subName)`: Property
+ID, basics, price fields (`- Buy` / `- Rent` suffix), the sub-category's highlights, `Amenity: …`,
+`Furnishing: …` (types with a Furnishing highlight), `Photo links`. Mandatory headers are dark green
+(title, Looking to, Status, City, Locality, Sale price for Buy / Monthly rent for Rent — an amount or
+"On request"). Dropdowns via data validation.
+
+Import rules: blank Property ID → insert; existing ID → update that listing (sub-category = sheet, so
+moving a row to another sheet re-files it); unknown ID / duplicate ID / missing mandatory → row reported,
+not saved. An empty cell clears the value. Listings are never deleted. Highlight "show on site" flags are
+kept for existing keys, new values default to shown. **Photo links** only manage `http(s)` image rows;
+uploaded photos are never touched. Each row saves in its own transaction. Headers are matched by text —
+renaming a field label in `fields.js` changes the header, so re-export after such a change. An unchanged
+export → import round trip leaves the data identical (verified).
 
 ## 7. Routes
 
@@ -123,7 +141,8 @@ Extra listing fields are a **fixed catalog in code**; values live in `property_f
 `GET/POST /property-edit` (add/edit, multer image upload ≤20),
 `GET /properties/:id/images/:imgId/delete` and `/properties/:id/images/prune` (master: remove one photo /
 all photo records whose file is missing), `GET/POST /change-password`,
-`GET /enquiries`, `GET/POST /users` (master only), `GET /users/:id/delete`, `GET/POST /import` (CSV).
+`GET /enquiries`, `GET/POST /users` (master only), `GET /users/:id/delete`, `GET/POST /import`,
+`GET /export.xlsx`, `GET /template.xlsx` (Excel, master only — see 6b).
 
 **Public API (`/api/*`, in `routes/api.js`):**
 - `GET /categories` — category→sub-category tree.
@@ -197,10 +216,7 @@ prefixed** names, or you get `ER_ACCESS_DENIED_ERROR`.
 - **Working:** admin CRUD + roles + import, public listings/filters/cascade, enquiry+OTP flow (SMS
   pending config), functional EMI calculators, self-bootstrapping install, auto schema migrations.
 - **Known loose ends:**
-  1. **Excel import template** (`docs/Vipra Realty - Property Import Template.xlsx`) still has the old
-     Builder/Project/Building columns and the old sub-category list (incl. "Others"); the importer
-     already tolerates a single "Property Title" and ignores extras, but the template should be
-     regenerated to match (single Property Title; sub-categories: …, Pent House, no Others).
+  1. ~~Excel import template~~ — replaced by the Excel import/export (6b); template regenerated.
   2. **Detail sidebar "Sale price" label** is static text — shows "Sale price" even for rent listings
      (the value is correct). Make it reflect `search_type`.
   3. **MSG91 OTP SMS** not configured — needs an account + India DLT templates, then `MSG91_AUTHKEY`.

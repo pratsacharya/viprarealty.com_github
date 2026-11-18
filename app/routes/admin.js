@@ -348,63 +348,31 @@ router.get('/users/:id/delete', requireMaster, checkCsrf, async (req, res) => {
   res.redirect('/adminvr/users');
 });
 
-// ---------- CSV import (master) ----------
-const { parse } = require('csv-parse/sync');
-const uploadCsv = multer({ dest: UPLOAD_DIR, limits: { fileSize: 5 * 1024 * 1024 } });
+// ---------- Excel import / export (master) ----------
+const excel = require('../src/excel');
+const uploadXlsx = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 router.get('/import', requireMaster, (req, res) => res.render('import', { ...base(req), page: 'import', report: null }));
-router.post('/import', requireMaster, uploadCsv.single('csv'), async (req, res) => {
-  if ((req.body.csv_csrf || req.body.csrf || '') !== req.session.csrf) return res.status(400).send('Invalid request token.');
-  if (!req.file) return res.render('import', { ...base(req), page: 'import', report: { err: 'No file uploaded.' } });
-
-  const raw = fs.readFileSync(req.file.path);
-  try { fs.unlinkSync(req.file.path); } catch (e) {}
-  let records;
-  try {
-    records = parse(raw, { columns: (h) => h.map((c) => c.toLowerCase().replace(/\(.*?\)/g, '').trim()), skip_empty_lines: true, trim: true });
-  } catch (e) {
-    return res.render('import', { ...base(req), page: 'import', report: { err: 'Could not read CSV: ' + e.message } });
-  }
-
-  const [catRows] = await pool.query('SELECT id,name FROM categories');
-  const [subRows] = await pool.query('SELECT id,name FROM sub_categories');
-  const catMap = Object.fromEntries(catRows.map((r) => [r.name.toLowerCase(), r.id]));
-  const subMap = Object.fromEntries(subRows.map((r) => [r.name.toLowerCase(), r.id]));
-  // old plural names in older CSV files still map to the renamed sub-category
-  for (const [oldName, newName] of Object.entries(RENAMED_SUBS)) {
-    if (subMap[newName.toLowerCase()]) subMap[oldName.toLowerCase()] = subMap[newName.toLowerCase()];
-  }
-  const statusMap = { 'active': 'active', 'inactive': 'inactive', 'sold out': 'sold_out', 'rented out': 'rented_out' };
-  const dig = (v) => { v = (v || '').replace(/[^0-9]/g, ''); return v === '' ? null : parseInt(v, 10); };
-
-  let total = 0, ok = 0, fail = 0; const errors = [];
-  for (const row of records) {
-    total++;
-    const g = (k) => (row[k] || '').trim();
-    const propTitle = g('property title') || g('project title');
-    if (!propTitle) { fail++; errors.push(`Row ${total}: missing property title`); continue; }
-    const stype = g('search type').toLowerCase() === 'buy' ? 'Buy' : 'Rent';
-    try {
-      const [r] = await pool.query(
-        `INSERT INTO properties (project_title,description,search_type,
-          category_id,sub_category_id,city,locality,sale_price,monthly_rent,deposit_amount,down_payment,possession_date,
-          bedrooms,bathrooms,carpet_area,builtup_area,total_floors,floor_no,ceiling_height,status,featured,created_by)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-        [propTitle, g('brief description'), stype,
-         catMap[g('category').toLowerCase()] || null, subMap[g('sub-category').toLowerCase()] || null,
-         g('city'), g('locality / area'), dig(g('sale price')), dig(g('monthly rent')), dig(g('deposit amount')),
-         dig(g('down payment')), g('possession date'), dig(g('bedrooms')), dig(g('bathrooms')), dig(g('carpet area')),
-         dig(g('built-up / plot size')), dig(g('total floors')), dig(g('floor no')), g('ceiling height'),
-         statusMap[g('status').toLowerCase()] || 'active', g('featured').toLowerCase() === 'yes' ? 1 : 0, req.session.user.id]);
-      const pid = r.insertId;
-      const urls = (g('image urls') || '').split(';').map((s) => s.trim()).filter(Boolean).slice(0, 20);
-      let o = 0; for (const u of urls) await pool.query('INSERT INTO property_images (property_id,file_path,sort_order) VALUES (?,?,?)', [pid, u, o++]);
-      ok++;
-    } catch (e) { fail++; errors.push(`Row ${total}: ${e.message}`); }
-  }
-  await backfillHighlights();   // imported spec columns -> highlight fields
-  await pool.query('INSERT INTO import_batches (filename,rows_total,rows_ok,rows_failed,errors,created_by) VALUES (?,?,?,?,?,?)',
-    [req.file.originalname, total, ok, fail, errors.join('\n'), req.session.user.id]);
-  res.render('import', { ...base(req), page: 'import', report: { total, ok, fail, errors } });
+async function sendWorkbook(res, withData, name) {
+  const wb = await excel.buildWorkbook({ withData });
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename="${name}"`);
+  await wb.xlsx.write(res);
+  res.end();
+}
+router.get('/export.xlsx', requireMaster, async (req, res) => {
+  const d = new Date().toISOString().slice(0, 10);
+  await sendWorkbook(res, true, `Vipra Realty listings ${d}.xlsx`);
+});
+router.get('/template.xlsx', requireMaster, (req, res) => sendWorkbook(res, false, 'Vipra Realty listings template.xlsx'));
+router.post('/import', requireMaster, uploadXlsx.single('file'), async (req, res) => {
+  if ((req.body.csrf || '') !== req.session.csrf) return res.status(400).send('Invalid request token.');
+  const show = (report) => res.render('import', { ...base(req), page: 'import', report });
+  if (!req.file) return show({ err: 'Choose an Excel file to import.' });
+  if (!/\.xlsx$/i.test(req.file.originalname)) return show({ err: 'Please upload an Excel .xlsx file (save as "Excel Workbook" if needed).' });
+  let report;
+  try { report = await excel.importWorkbook(req.file.buffer, req.session.user.id); }
+  catch (e) { return show({ err: 'Could not read the Excel file: ' + e.message }); }
+  show(report);
 });
 
 module.exports = router;

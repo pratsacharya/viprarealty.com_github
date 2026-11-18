@@ -148,6 +148,15 @@ async function ensureStampDutyColumn() {
   if (n === 0) await pool.query('ALTER TABLE properties ADD COLUMN stamp_duty VARCHAR(80) NULL AFTER down_payment');
 }
 
+// Excel import downloads linked photos into the uploads folder; source_url keeps
+// the link each one came from, so importing the same link again is not a duplicate.
+async function ensureImageSourceColumn() {
+  const [[{ n }]] = await pool.query(
+    "SELECT COUNT(*) n FROM information_schema.COLUMNS " +
+      "WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='property_images' AND COLUMN_NAME='source_url'");
+  if (n === 0) await pool.query('ALTER TABLE property_images ADD COLUMN source_url VARCHAR(500) NULL AFTER file_path');
+}
+
 // Copy the old spec columns (bedrooms, carpet area, floor, ...) into highlight
 // rows for listings that have none yet — existing listings and CSV imports.
 // Idempotent: a listing with any highlight row is left alone.
@@ -189,4 +198,4 @@ function dbMessage(e) {
   return msg;
 }
 
-module.exports = { ensureSchema, dbMessage, ensureCategoryTree, dropLegacyColumns, ensureFieldsTable, ensureMaintenanceColumn, ensureStampDutyColumn, backfillHighlights, CATEGORY_TREE, RENAMED_SUBS };
+module.exports = { ensureSchema, dbMessage, ensureCategoryTree, dropLegacyColumns, ensureFieldsTable, ensureMaintenanceColumn, ensureStampDutyColumn, ensureImageSourceColumn, backfillHighlights, CATEGORY_TREE, RENAMED_SUBS };

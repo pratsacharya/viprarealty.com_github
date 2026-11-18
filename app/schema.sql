@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS property_images (
   id INT AUTO_INCREMENT PRIMARY KEY,
   property_id INT NOT NULL,
   file_path VARCHAR(255) NOT NULL,
+  source_url VARCHAR(500) NULL,
   sort_order INT NOT NULL DEFAULT 0,
   FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -59,7 +59,7 @@ function columnsFor(subName) {
       cols.push(c('Furnishing: ' + f.label, { kind: 'fu', key: f.key, width: 18, note: 'Rent listings that are semi- or fully furnished. Yes, or a count/note (e.g. 4).' }));
     }
   }
-  cols.push(c('Photo links', { kind: 'photos', width: 40, note: 'Web links to photos, separated by commas. Photos uploaded in the admin are not listed here and are never changed by import.' }));
+  cols.push(c('Photo links', { kind: 'photos', width: 40, note: 'Web links to photos, separated by commas. Google Drive links work when the file is shared as "Anyone with the link". Photos uploaded in the admin are not listed here and are never changed by import.' }));
   return cols;
 }
 
@@ -153,6 +153,7 @@ function addInstructions(wb) {
     ['Amenity columns: type Yes, or a number / note (e.g. 120 for Total Car Park). Leave blank if not available.'],
     ['Furnishing columns are used for Rent listings marked Semi-furnished or Fully furnished (Furnished for offices).'],
     ['Photo links: web links to photos, separated by commas. Photos uploaded in the admin are kept and are not listed here.'],
+    ['Google Drive photos: in Drive, Share → General access → "Anyone with the link", then Copy link and paste it here.'],
     ['Highlights you hid with "Show on site" stay hidden; new values are shown.'],
     [''],
     ['Tip: download "Export all listings" first, edit that file, then import it. Do not rename sheets or headings.'],
@@ -193,7 +194,7 @@ async function importWorkbook(buffer, userId) {
 
   const [subs] = await pool.query('SELECT id, name, category_id FROM sub_categories');
   const subByName = Object.fromEntries(subs.map((s) => [s.name.toLowerCase(), s]));
-  const report = { added: 0, updated: 0, failed: 0, errors: [], added_ids: [] };
+  const report = { added: 0, updated: 0, failed: 0, errors: [], added_ids: [], warnings: [] };
   const seen = new Set();
 
   for (const ws of wb.worksheets) {
@@ -216,6 +217,7 @@ async function importWorkbook(buffer, userId) {
       try {
         const res = await saveRow(val, defs, sub, userId, seen);
         if (res.added) { report.added++; report.added_ids.push(`${where} → ID ${res.id}`); } else report.updated++;
+        for (const u of res.badLinks) report.warnings.push(`${where} (ID ${res.id}): photo not added, the link does not open a public image: ${u}`);
       } catch (e) {
         report.failed++; report.errors.push(`${where}: ${e.userMessage || e.message}`);
       }
@@ -224,6 +226,27 @@ async function importWorkbook(buffer, userId) {
   await pool.query('INSERT INTO import_batches (filename,rows_total,rows_ok,rows_failed,errors,created_by) VALUES (?,?,?,?,?,?)',
     ['excel', report.added + report.updated + report.failed, report.added + report.updated, report.failed, report.errors.join('\n'), userId]);
   return report;
+}
+
+// Share links from Google Drive / Dropbox open a web page, not the picture.
+// Turn them into a direct image address the website can show.
+function directImageUrl(u) {
+  const m = u.match(/drive\.google\.com\/(?:file\/d\/|open\?(?:.*&)?id=|uc\?(?:.*&)?id=|thumbnail\?(?:.*&)?id=)([\w-]{10,})/i)
+    || u.match(/docs\.google\.com\/uc\?(?:.*&)?id=([\w-]{10,})/i);
+  if (m) return 'https://lh3.googleusercontent.com/d/' + m[1];
+  if (/^https?:\/\/(www\.)?dropbox\.com\//i.test(u)) return u.replace(/([?&])dl=0\b/, '$1raw=1') + (/[?&](dl|raw)=/.test(u) ? '' : (u.includes('?') ? '&' : '?') + 'raw=1');
+  return u;
+}
+
+// True when the link opens a picture for anyone (no sign-in needed).
+async function isPublicImage(u) {
+  if (typeof fetch !== 'function') return true;     // cannot check: accept it
+  try {
+    const res = await fetch(u, { redirect: 'follow', signal: AbortSignal.timeout(15000) });
+    const ok = res.ok && /^image\//i.test(res.headers.get('content-type') || '');
+    try { await res.body?.cancel(); } catch (_) { /* ignore */ }
+    return ok;
+  } catch (_) { return false; }
 }
 
 const fail = (m) => { const e = new Error(m); e.userMessage = m; throw e; };
@@ -300,7 +323,16 @@ async function saveRow(val, defs, sub, userId, seen) {
   Object.assign(data, fields.legacyColumns(sub.name,
     Object.fromEntries(Object.entries(fv.highlight).map(([k, f]) => [k, f.value]))));
 
-  const links = has('photos') ? (val.photos || '').split(/[,\n]+/).map((s) => s.trim()).filter((s) => /^https?:\/\//i.test(s)) : null;
+  let links = has('photos') ? (val.photos || '').split(/[,\n]+/).map((s) => s.trim()).filter((s) => /^https?:\/\//i.test(s)) : null;
+  const badLinks = [];
+  if (links) {
+    const good = [];
+    for (const raw of links) {
+      const u = directImageUrl(raw);
+      if (/^https?:\/\/(www\.)?viprarealty\.com\/uploads\//i.test(u) || await isPublicImage(u)) good.push(u); else badLinks.push(raw);
+    }
+    links = good;
+  }
 
   const conn = await pool.getConnection();
   try {
@@ -334,7 +366,7 @@ async function saveRow(val, defs, sub, userId, seen) {
     }
     await conn.commit();
     if (id) seen.add(id);
-    return { added: !existing, id: pid };
+    return { added: !existing, id: pid, badLinks };
   } catch (e) {
     await conn.rollback();
     throw e;

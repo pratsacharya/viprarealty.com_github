@@ -129,7 +129,10 @@ Import rules: blank Property ID → insert; existing ID → update that listing 
 moving a row to another sheet re-files it); unknown ID / duplicate ID / missing mandatory → row reported,
 not saved. An empty cell clears the value. Listings are never deleted. Highlight "show on site" flags are
 kept for existing keys, new values default to shown. **Photo links** only manage `http(s)` image rows;
-uploaded photos are never touched. Each row saves in its own transaction. Headers are matched by text —
+uploaded photos are never touched. Google Drive / Dropbox share links are rewritten to direct image URLs
+(`lh3.googleusercontent.com/d/<id>`), and each link is fetched at import: a link that does not return
+`image/*` (e.g. a Drive file not shared as "Anyone with the link") is skipped and listed in `report.warnings`.
+Each row saves in its own transaction. Headers are matched by text —
 renaming a field label in `fields.js` changes the header, so re-export after such a change. An unchanged
 export → import round trip leaves the data identical (verified).
 

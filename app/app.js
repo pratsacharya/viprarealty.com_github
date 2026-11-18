@@ -58,6 +58,8 @@ _boot.dropLegacyColumns()
   .then(() => _boot.ensureMaintenanceColumn())
   .then(() => _boot.ensureStampDutyColumn())
   .then(() => _boot.ensureImageSourceColumn())
+  .then(() => require('./src/images').convertExisting(require('./src/db')))
+  .then((n) => { if (n) console.log('Converted ' + n + ' photos to WebP'); })
   .then(() => _boot.backfillHighlights())
   .then(() => console.log('Schema migrations + category tree reconciled'))
   .catch((e) => console.error('Startup DB maintenance skipped:', e.code || e.message));

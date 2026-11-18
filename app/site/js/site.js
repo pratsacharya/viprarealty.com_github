@@ -74,8 +74,9 @@
     var b = badge(l);
     var title = (l.project_title || '').trim() || 'Untitled';
     var closed = (l.status === 'sold_out' || l.status === 'rented_out');
-    var media = l.images && l.images.length
-      ? '<img src="' + esc(imgSrc(l.images[0])) + '" alt="" loading="lazy">'
+    var cardImg = (l.thumbs && l.thumbs[0]) || (l.images && l.images[0]);
+    var media = cardImg
+      ? '<img src="' + esc(imgSrc(cardImg)) + '" alt="" loading="lazy">'
       : PLACEHOLDER;
     var sp = specs(l);
     var dep = (l.search_type !== 'Buy' && l.deposit_amount) ? inrShort(l.deposit_amount) : '';

@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const pool = require('../src/db');
 const { sendSms, notifyMasterEnquiry } = require('../src/mailer');
 const { isMissing } = require('../src/uploads');
+const { thumbOf } = require('../src/images');
 const fields = require('../src/fields');
 
 const router = express.Router();
@@ -135,6 +136,7 @@ router.get('/listings', async (req, res) => {
     const [imgs] = await pool.query('SELECT file_path FROM property_images WHERE property_id=? ORDER BY sort_order', [r.id]);
     // skip records whose file is gone, so a dead photo never becomes the card image
     r.images = imgs.map((i) => i.file_path).filter((f) => !isMissing(f));
+    r.thumbs = r.images.map(thumbOf);   // smaller WebP for property cards
   }
   await attachFields(rows);
   res.json({ count: rows.length, listings: rows });

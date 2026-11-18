@@ -21,6 +21,7 @@ const { CATEGORY_TREE } = require('./bootstrap');
 const fs = require('fs');
 const crypto = require('crypto');
 const { diskPath, isLocal, isMissing } = require('./uploads');
+const { processImage, removeImage } = require('./images');
 
 const CITIES = ['Bangalore', 'Mumbai', 'Navi Mumbai', 'Thane'];
 const STATUS = { active: 'Active', inactive: 'Inactive', sold_out: 'Sold out', rented_out: 'Rented out' };
@@ -261,10 +262,10 @@ async function downloadImage(u) {
     if (!buf.length || buf.length > MAX_PHOTO) return null;
     const name = 'uploads/p_' + Date.now() + '_' + crypto.randomBytes(4).toString('hex') + '.' + ext;
     fs.writeFileSync(diskPath(name), buf);
-    return name;
+    return await processImage(name);   // WebP 1600 px + 600x450 card thumbnail
   } catch (_) { return null; }
 }
-const unlinkQuiet = (f) => { if (isLocal(f)) try { fs.unlinkSync(diskPath(f)); } catch (_) { /* ignore */ } };
+const unlinkQuiet = (f) => removeImage(f);
 
 const fail = (m) => { const e = new Error(m); e.userMessage = m; throw e; };
 

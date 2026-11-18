@@ -327,6 +327,7 @@
       set('d-loc', place);
       set('d-price-label', l.search_type === 'Buy' ? 'Sale price' : 'Monthly rent');
       setHTML('d-price', priceText(l));
+      set('d-pid', 'Property ID: ' + l.id);
       var rr = rentRows(l), rEl = document.getElementById('d-rent-rows');
       if (rEl) {
         rEl.innerHTML = rr.map(function (r) {

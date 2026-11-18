@@ -366,6 +366,7 @@ select.field.auto { width: auto; }
 .side-card .rr span:last-child { font-weight: 500; text-align: right; }
 .side-card .rr-total span:last-child { font-weight: 700; }
 .side-card .price small { font-size: 14px; font-weight: 500; color: var(--muted); }
+.side-card .prop-id { margin-top: 12px; font-size: 12px; color: var(--muted); text-align: center; }
 .side-card .cta { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
 .side-card .emi { padding: 18px; margin-top: 20px; grid-template-columns: 1fr; gap: 12px; }
 .side-card .emi .span-2, .side-card .emi-out { grid-column: span 1; }

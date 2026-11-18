@@ -27,6 +27,7 @@ const router = express.Router();
 });
 
 const { UPLOAD_DIR, diskPath, isLocal, isMissing, storageInfo } = require('../src/uploads');
+const { processImage, removeImage } = require('../src/images');
 
 const OK_EXT = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
 const storage = multer.diskStorage({
@@ -146,8 +147,7 @@ router.get('/properties/:id/delete', requireMaster, checkCsrf, async (req, res) 
 
 // ---------- photos of one property (master) ----------
 function removeFile(filePath) {
-  if (!isLocal(filePath)) return;
-  try { fs.unlinkSync(diskPath(filePath)); } catch (e) {}
+  removeImage(filePath);   // the photo and its card thumbnail
 }
 // remove one photo
 router.get('/properties/:id/images/:imgId/delete', requireMaster, checkCsrf, async (req, res) => {
@@ -291,8 +291,10 @@ router.post('/property-edit', upload.array('images', 20), async (req, res) => {
   let have = (await pool.query('SELECT COUNT(*) n FROM property_images WHERE property_id=?', [pid]))[0][0].n;
   for (const f of (req.files || [])) {
     if (have >= 20) { try { fs.unlinkSync(f.path); } catch (e) {} continue; }
+    // resize to WebP (1600 px photo + 600x450 card thumbnail)
+    const stored = await processImage('uploads/' + f.filename);
     await pool.query('INSERT INTO property_images (property_id,file_path,sort_order) VALUES (?,?,?)',
-      [pid, 'uploads/' + f.filename, have]);
+      [pid, stored, have]);
     have++;
   }
   res.redirect('/adminvr/properties');

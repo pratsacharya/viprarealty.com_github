@@ -17,8 +17,8 @@ No buyer accounts, no payments. Two sides:
 - **MySQL** via `mysql2/promise` (`app/src/db.js` connection pool).
 - **EJS** templates for the admin panel (`app/views/`).
 - **Vanilla JS** public site (`app/site/js/site.js`) — **no build step**, static HTML served directly.
-- Auth: `express-session` + `bcryptjs`. Uploads: `multer`. Excel import/export: `exceljs`. SMS: MSG91 (optional).
-- Dependencies: `express, mysql2, ejs, express-session, bcryptjs, multer, exceljs, dotenv`.
+- Auth: `express-session` + `bcryptjs`. Uploads: `multer`, resized with `sharp`. Excel import/export: `exceljs`. SMS: MSG91 (optional).
+- Dependencies: `express, mysql2, ejs, express-session, bcryptjs, multer, sharp, exceljs, dotenv`.
 
 ## 3. Repo map
 
@@ -35,6 +35,7 @@ app/
     middleware.js     requireLogin / requireMaster / csrfToken / checkCsrf.
     fields.js         Type-aware field catalog: highlights per sub-category, amenities, furnishings.
     uploads.js        Upload folder (UPLOAD_DIR), file helpers, storage diagnostics.
+    images.js         Photo resizing (sharp): WebP 1600 px + 600x450 card thumbnail.
     excel.js          Excel bulk export (workbook per sub-category) + import (add / update by Property ID).
     mailer.js         sendSms (MSG91; no-op if MSG91_AUTHKEY unset) + notifyMasterEnquiry (stub/TODO).
   views/              EJS admin templates + partials/ (header, footer).
@@ -195,6 +196,12 @@ per-deploy build directory (`.../hbuilds/versions/<id>/nodejs`), so nothing insi
 **Must be set on Hostinger to a path outside the app root** (e.g. `~/vipra-uploads`): a Git deploy
 replaces the app folder and wipes images stored inside it. Always resolve image files through
 `src/uploads.js` (`UPLOAD_DIR`, `diskPath`), never `path.join(__dirname, 'uploads')`.
+
+**Photo sizes (`src/images.js`):** every stored photo (admin upload, Excel photo link) is converted to
+`p_<id>.webp` (longest side ≤ 1600 px, q80) for the gallery plus `p_<id>_t.webp` (600×450 centre crop,
+q80) for cards; the DB keeps only the `.webp` path and `thumbOf()` finds the thumbnail by name. The API
+returns `images` and `thumbs`. Originals are moved to `UPLOAD_DIR/originals` as a backup. On startup
+`convertExisting()` converts older photos. If `sharp` cannot load, photos are stored unresized.
 
 **Hostinger gotcha:** MySQL DB and user names are auto-prefixed with the account id (e.g.
 `u707964325_viprarealty_d` / `u707964325_viprarealty_u`). `DB_NAME`/`DB_USER` must use the **full

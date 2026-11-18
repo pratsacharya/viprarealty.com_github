@@ -87,6 +87,7 @@
         '<span class="price-col"><span class="price">' + priceText(l) + '</span>' +
         (dep ? '<span class="dep">Deposit ' + dep + '</span>' : '') + '</span></div>' +
       (sp.length ? '<p class="specs">' + sp.map(esc).join(' · ') + (l.sub_category ? ' · ' + esc(l.sub_category) : '') + '</p>' : '') +
+      '<p class="pid">Property ID: ' + esc(l.id) + '</p>' +
       '</a></article>';
   }
 

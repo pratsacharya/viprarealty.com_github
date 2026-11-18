@@ -19,7 +19,7 @@
   // Maintenance ("+ ₹5,000/mo" for a number, the text as entered otherwise),
   // Monthly Total when maintenance is a number, then Security Deposit.
   function rentRows(l) {
-    if (l.search_type === 'Buy') return [];
+    if (l.search_type === 'Buy') return buyRows(l);
     var rows = [];
     var m = String(l.maintenance == null ? '' : l.maintenance).trim();
     if (m) {
@@ -34,6 +34,18 @@
     }
     if (l.deposit_amount) rows.push(['Security Deposit', inr(l.deposit_amount)]);
     return rows;
+  }
+  // Sale breakdown: "+ Stamp Duty, Regn + Taxes" as "+ ₹3,50,000" for a number,
+  // "+ 7%" for a percentage, or the text as entered (e.g. "Extra").
+  function buyRows(l) {
+    var s = String(l.stamp_duty == null ? '' : l.stamp_duty).trim();
+    if (!s) return [];
+    var digits = s.replace(/[₹,\s]/g, '').replace(/^rs\.?/i, '');
+    var val;
+    if (/^\d+(\.\d+)?$/.test(digits)) val = '+ ' + inr(Math.round(Number(digits)));
+    else if (/^\d+(\.\d+)?%$/.test(digits)) val = '+ ' + digits;
+    else val = s.charAt(0).toUpperCase() + s.slice(1);
+    return [['Stamp Duty, Regn + Taxes', val]];
   }
   function priceText(l) {
     if (l.search_type === 'Buy') return l.sale_price ? inrShort(l.sale_price) : 'Price on request';

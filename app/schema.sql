@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS properties (
   deposit_amount BIGINT NULL,
   maintenance VARCHAR(80) NULL,
   down_payment BIGINT NULL,
+  stamp_duty VARCHAR(80) NULL,
   possession_date VARCHAR(40) NULL,
   bedrooms INT NULL,
   bathrooms INT NULL,

@@ -170,7 +170,7 @@ router.get('/properties/:id/images/prune', requireMaster, checkCsrf, async (req,
 
 // ---------- add / edit ----------
 const PROP_FIELDS = ['project_title', 'description', 'search_type',
-  'category_id', 'sub_category_id', 'city', 'locality', 'sale_price', 'monthly_rent', 'deposit_amount', 'maintenance', 'down_payment',
+  'category_id', 'sub_category_id', 'city', 'locality', 'sale_price', 'monthly_rent', 'deposit_amount', 'maintenance', 'down_payment', 'stamp_duty',
   'possession_date', 'bedrooms', 'bathrooms', 'carpet_area', 'builtup_area', 'total_floors', 'floor_no',
   'ceiling_height', 'status', 'featured'];
 
@@ -245,13 +245,14 @@ router.post('/property-edit', upload.array('images', 20), async (req, res) => {
     category_id: num('category_id'), sub_category_id: num('sub_category_id'), city: str('city'), locality: str('locality'),
     sale_price: num('sale_price'), monthly_rent: num('monthly_rent'), deposit_amount: num('deposit_amount'),
     maintenance: str('maintenance').slice(0, 80) || null,
+    stamp_duty: str('stamp_duty').slice(0, 80) || null,
     down_payment: num('down_payment'), possession_date: str('possession_date'),
     status: ['active', 'inactive', 'sold_out', 'rented_out'].includes(str('status')) ? str('status') : 'active',
     featured: req.body.featured ? 1 : 0,
   };
 
   // only the price fields of the chosen search type are kept
-  if (data.search_type === 'Rent') { data.sale_price = null; data.down_payment = null; }
+  if (data.search_type === 'Rent') { data.sale_price = null; data.down_payment = null; data.stamp_duty = null; }
   else { data.monthly_rent = null; data.deposit_amount = null; data.maintenance = null; }
 
   // extra fields for this listing's type; the old spec columns follow the highlights

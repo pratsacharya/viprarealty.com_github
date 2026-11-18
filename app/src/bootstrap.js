@@ -140,6 +140,14 @@ async function ensureMaintenanceColumn() {
      WHERE p.search_type='Rent' AND (p.maintenance IS NULL OR p.maintenance='')`);
 }
 
+// Buy listings: "+ Stamp Duty, Regn + Taxes" in the price section. Add the column if missing.
+async function ensureStampDutyColumn() {
+  const [[{ n }]] = await pool.query(
+    "SELECT COUNT(*) n FROM information_schema.COLUMNS " +
+      "WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='properties' AND COLUMN_NAME='stamp_duty'");
+  if (n === 0) await pool.query('ALTER TABLE properties ADD COLUMN stamp_duty VARCHAR(80) NULL AFTER down_payment');
+}
+
 // Copy the old spec columns (bedrooms, carpet area, floor, ...) into highlight
 // rows for listings that have none yet — existing listings and CSV imports.
 // Idempotent: a listing with any highlight row is left alone.
@@ -181,4 +189,4 @@ function dbMessage(e) {
   return msg;
 }
 
-module.exports = { ensureSchema, dbMessage, ensureCategoryTree, dropLegacyColumns, ensureFieldsTable, ensureMaintenanceColumn, backfillHighlights, CATEGORY_TREE, RENAMED_SUBS };
+module.exports = { ensureSchema, dbMessage, ensureCategoryTree, dropLegacyColumns, ensureFieldsTable, ensureMaintenanceColumn, ensureStampDutyColumn, backfillHighlights, CATEGORY_TREE, RENAMED_SUBS };

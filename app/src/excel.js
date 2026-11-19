@@ -64,7 +64,7 @@ function columnsFor(subName) {
       cols.push(c('Furnishing: ' + f.label, { kind: 'fu', key: f.key, width: 18, note: 'Rent listings that are semi- or fully furnished. Yes, or a count/note (e.g. 4).' }));
     }
   }
-  cols.push(c('Photo links', { kind: 'photos', width: 40, note: 'Web links to photos, separated by commas. Each photo is downloaded and saved on the website. Google Drive links work when the file is shared as "Anyone with the link". Photos uploaded in the admin are not listed here and are never changed by import.' }));
+  cols.push(c('Photo links', { kind: 'photos', width: 40, note: 'Web links to photos, separated by commas. A shared Google Drive folder link adds every photo in the folder (in file-name order). Each photo is downloaded and saved on the website. Google Drive links work when the file is shared as "Anyone with the link". Photos uploaded in the admin are not listed here and are never changed by import.' }));
   return cols;
 }
 
@@ -159,6 +159,7 @@ function addInstructions(wb) {
     ['Furnishing columns are used for Rent listings marked Semi-furnished or Fully furnished (Furnished for offices).'],
     ['Photo links: web links to photos, separated by commas. Photos uploaded in the admin are kept and are not listed here.'],
     ['Google Drive photos: in Drive, Share → General access → "Anyone with the link", then Copy link and paste it here.'],
+    ['Google Drive folder: paste the folder link to add every photo in it, in file-name order (name them 01, 02, ... to choose the order; the first is the card photo). Videos are skipped. Max 20 photos.'],
     ['Linked photos are downloaded and saved on the website when you import, so they keep showing even if you later delete them from Drive. Remove a link from the cell to remove that photo from the listing.'],
     ['Highlights you hid with "Show on site" stay hidden; new values are shown.'],
     [''],
@@ -223,7 +224,7 @@ async function importWorkbook(buffer, userId) {
       try {
         const res = await saveRow(val, defs, sub, userId, seen);
         if (res.added) { report.added++; report.added_ids.push(`${where} → ID ${res.id}`); } else report.updated++;
-        for (const u of res.badLinks) report.warnings.push(`${where} (ID ${res.id}): photo not added, the link does not open a public image: ${u}`);
+        for (const m of res.badLinks) report.warnings.push(`${where} (ID ${res.id}): ${m}`);
       } catch (e) {
         report.failed++; report.errors.push(`${where}: ${e.userMessage || e.message}`);
       }
@@ -242,6 +243,28 @@ function directImageUrl(u) {
   if (m) return 'https://lh3.googleusercontent.com/d/' + m[1];
   if (/^https?:\/\/(www\.)?dropbox\.com\//i.test(u)) return u.replace(/([?&])dl=0\b/, '$1raw=1') + (/[?&](dl|raw)=/.test(u) ? '' : (u.includes('?') ? '&' : '?') + 'raw=1');
   return u;
+}
+
+// A shared Google Drive folder link -> its photos, as direct image links in
+// file-name order (01, 02, ... decides the order on the website). Videos and
+// other files are skipped. Returns null when the folder cannot be read
+// (not shared as "Anyone with the link").
+const FOLDER_RE = /drive\.google\.com\/drive\/(?:u\/\d+\/)?folders\/([\w-]{10,})/i;
+async function drivePhotos(folderId) {
+  try {
+    const res = await fetch('https://drive.google.com/embeddedfolderview?id=' + folderId, { signal: AbortSignal.timeout(20000) });
+    const html = await res.text();
+    if (!res.ok || !html.includes('flip-entries')) return null;
+    const items = [];
+    for (const block of html.split('class="flip-entry"').slice(1)) {
+      const id = (block.match(/^\s*id="entry-([\w-]+)"/) || [])[1];
+      const type = (block.match(/\/type\/([\w.+-]+\/[\w.+-]+)/) || [])[1] || '';
+      const name = ((block.match(/flip-entry-title">([^<]*)</) || [])[1] || '').replace(/&amp;/g, '&');
+      if (id && /^image\//i.test(type)) items.push({ id, name });
+    }
+    items.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+    return items.map((i) => ({ url: 'https://lh3.googleusercontent.com/d/' + i.id, name: i.name }));
+  } catch (_) { return null; }
 }
 
 // The link a photo row is managed by: the link it was downloaded from, or the
@@ -344,10 +367,29 @@ async function saveRow(val, defs, sub, userId, seen) {
   // Photo links: each link is downloaded into the uploads folder before saving.
   // A link already downloaded for this listing is not fetched again.
   const OWN = /^https?:\/\/(www\.)?viprarealty\.com\/uploads\//i;
+  // A Google Drive folder link brings in every photo in that folder.
   const rawOf = {};                           // direct link -> link as typed, for messages
-  const links = has('photos') ? [...new Set((val.photos || '').split(/[,\n]+/).map((s) => s.trim())
-    .filter((s) => /^https?:\/\//i.test(s) && !OWN.test(s)).map((s) => { const d = directImageUrl(s); rawOf[d] ||= s; return d; }))] : null;
-  const badLinks = [], fetched = [];          // fetched: { key, file }
+  const badLinks = [], fetched = [];          // badLinks: messages; fetched: { key, file }
+  let links = null, folderFailed = false;
+  if (has('photos')) {
+    const keys = [];
+    for (const s of (val.photos || '').split(/[,\n]+/).map((x) => x.trim())) {
+      if (!/^https?:\/\//i.test(s) || OWN.test(s)) continue;
+      const folder = s.match(FOLDER_RE);
+      if (folder) {
+        const photos = await drivePhotos(folder[1]);
+        if (!photos) folderFailed = true;
+        if (!photos) badLinks.push('Drive folder could not be opened. Share it as "Anyone with the link": ' + s);
+        else if (!photos.length) badLinks.push('no photos found in Drive folder: ' + s);
+        else for (const p of photos) { rawOf[p.url] ||= p.name + ' (from the Drive folder)'; keys.push(p.url); }
+      } else { const d = directImageUrl(s); rawOf[d] ||= s; keys.push(d); }
+    }
+    links = [...new Set(keys)];
+    if (links.length > 20) {
+      badLinks.push(`${links.length} photos given, only the first 20 are used`);
+      links = links.slice(0, 20);
+    }
+  }
   let managed = [], keep = new Set(), otherCount = 0;
   if (links) {
     if (existing) {
@@ -355,13 +397,23 @@ async function saveRow(val, defs, sub, userId, seen) {
       managed = imgs.filter(linkOf);
       otherCount = imgs.length - managed.length;
     }
+    // a folder that could not be opened removes nothing: its photos stay as they are
+    if (folderFailed) managed.forEach((i) => keep.add(i.id));
+    const todo = [];
     for (const key of links) {
       const m = managed.find((i) => linkOf(i) === key);
-      if (m && isLocal(m.file_path) && !isMissing(m.file_path)) { keep.add(m.id); continue; }
-      const file = await downloadImage(key);
-      if (file) fetched.push({ key, file, row: m });
-      else { badLinks.push(rawOf[key] || key); if (m) keep.add(m.id); }   // keep an older web-link row as it was
+      if (m && isLocal(m.file_path) && !isMissing(m.file_path)) keep.add(m.id); else todo.push({ key, row: m });
     }
+    // download 4 at a time; results keep the order given (first photo = card photo)
+    const files = new Array(todo.length);
+    let next = 0;
+    await Promise.all(Array.from({ length: Math.min(4, todo.length) }, async () => {
+      while (next < todo.length) { const i = next++; files[i] = await downloadImage(todo[i].key); }
+    }));
+    todo.forEach((t, i) => {
+      if (files[i]) fetched.push({ key: t.key, file: files[i], row: t.row });
+      else { badLinks.push('photo not added, the link does not open a public image: ' + (rawOf[t.key] || t.key)); if (t.row) keep.add(t.row.id); }   // keep an older web-link row as it was
+    });
   }
   const removed = [];
 

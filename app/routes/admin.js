@@ -232,7 +232,14 @@ router.get('/property-edit', async (req, res) => {
   res.render('property-form', { ...base(req), page: 'property-edit', ...(await loadFormData()), p, isEdit: !!id, images, fv: await loadFieldValues(id), error: null });
 });
 
-router.post('/property-edit', upload.array('images', 20), async (req, res) => {
+// Upload errors (file too large, too many files) get a plain message instead of a 500.
+const photoUpload = (req, res, next) => upload.array('images', 20)(req, res, (err) => {
+  if (!err) return next();
+  const msg = err.code === 'LIMIT_FILE_SIZE' ? 'A photo is larger than 8 MB.' : err.code === 'LIMIT_UNEXPECTED_FILE' ? 'Too many photos (max 20).' : 'Upload failed: ' + err.message;
+  res.status(400).send(msg + ' Go back and choose smaller or fewer photos.');
+});
+
+router.post('/property-edit', photoUpload, async (req, res) => {
   const id = +(req.query.id || 0);
   if (id && req.session.user.role !== 'master') return res.status(403).send('Editing is master-only.');
   if ((req.body.csrf || '') !== req.session.csrf) return res.status(400).send('Invalid request token.');
@@ -366,7 +373,12 @@ router.get('/export.xlsx', requireMaster, async (req, res) => {
   await sendWorkbook(res, true, `Vipra Realty listings ${d}.xlsx`);
 });
 router.get('/template.xlsx', requireMaster, (req, res) => sendWorkbook(res, false, 'Vipra Realty listings template.xlsx'));
-router.post('/import', requireMaster, uploadXlsx.single('file'), async (req, res) => {
+const xlsxUpload = (req, res, next) => uploadXlsx.single('file')(req, res, (err) => {
+  if (!err) return next();
+  res.status(400).render('import', { ...base(req), page: 'import',
+    report: { err: err.code === 'LIMIT_FILE_SIZE' ? 'The Excel file is too large (max 10 MB).' : 'Upload failed: ' + err.message } });
+});
+router.post('/import', requireMaster, xlsxUpload, async (req, res) => {
   if ((req.body.csrf || '') !== req.session.csrf) return res.status(400).send('Invalid request token.');
   const show = (report) => res.render('import', { ...base(req), page: 'import', report });
   if (!req.file) return show({ err: 'Choose an Excel file to import.' });

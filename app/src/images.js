@@ -14,8 +14,11 @@ const fs = require('fs');
 const path = require('path');
 const { UPLOAD_DIR, diskPath, isLocal } = require('./uploads');
 
-let sharp = null;
-try { sharp = require('sharp'); } catch (e) { console.error('sharp not available, photos are stored unresized:', e.message); }
+let sharp = null, loadError = '';
+try { sharp = require('sharp'); } catch (e) {
+  loadError = String(e.message || e).split('\n')[0].slice(0, 200);
+  console.error('sharp not available, photos are stored unresized:', e.message);
+}
 
 const ORIGINALS = path.join(UPLOAD_DIR, 'originals');
 const FULL = 1600, THUMB_W = 600, THUMB_H = 450, QUALITY = 80, EFFORT = 6;
@@ -85,4 +88,4 @@ async function convertExisting(pool) {
   return n;
 }
 
-module.exports = { processImage, thumbOf, removeImage, convertExisting, available: () => !!sharp };
+module.exports = { processImage, thumbOf, removeImage, convertExisting, available: () => !!sharp, loadError: () => loadError };

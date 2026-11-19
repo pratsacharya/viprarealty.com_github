@@ -20,7 +20,10 @@ const router = express.Router();
 
 // Category → sub-category tree, from the live DB (drives the public filters)
 // Health check: the app is up and photo resizing (sharp) is available.
-router.get('/health', (req, res) => res.json({ ok: true, images: require('../src/images').available() }));
+router.get('/health', (req, res) => {
+  const im = require('../src/images');
+  res.json({ ok: true, images: im.available(), node: process.versions.node.split('.')[0], ...(im.available() ? {} : { imagesError: im.loadError() }) });
+});
 
 router.get('/categories', async (req, res) => {
   const [cats] = await pool.query('SELECT id, name FROM categories ORDER BY id');

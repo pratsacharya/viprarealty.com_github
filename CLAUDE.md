@@ -136,6 +136,9 @@ for that listing is not fetched again; a link removed from the cell deletes that
 whose `file_path` is a web URL are converted on the next import. Export lists `source_url` (or the web URL).
 Admin-uploaded photos (no `source_url`) are never touched. A link that does not return an image (e.g. a private
 Drive file) is skipped and listed in `report.warnings`.
+A **Google Drive folder link** (`drive.google.com/drive/folders/<id>`) expands to every image in the folder
+(read from the public `embeddedfolderview` page, no API key; sorted by file name, videos skipped, max 20).
+If a folder can't be opened, the listing's link photos are left as they are. Downloads run 4 at a time.
 Each row saves in its own transaction. Headers are matched by text —
 renaming a field label in `fields.js` changes the header, so re-export after such a change. An unchanged
 export → import round trip leaves the data identical (verified).

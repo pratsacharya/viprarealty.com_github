@@ -33,19 +33,31 @@
       }
     }
     if (l.deposit_amount) rows.push(['Security Deposit', inr(l.deposit_amount)]);
-    return rows;
+    return rows.concat(brokerageRows(l));
   }
   // Sale breakdown: "+ Stamp Duty, Regn + Taxes" as "+ ₹3,50,000" for a number,
   // "+ 7%" for a percentage, or the text as entered (e.g. "Extra").
   function buyRows(l) {
     var s = String(l.stamp_duty == null ? '' : l.stamp_duty).trim();
-    if (!s) return [];
+    if (!s) return brokerageRows(l);
     var digits = s.replace(/[₹,\s]/g, '').replace(/^rs\.?/i, '');
     var val;
     if (/^\d+(\.\d+)?$/.test(digits)) val = '+ ' + inr(Math.round(Number(digits)));
     else if (/^\d+(\.\d+)?%$/.test(digits)) val = '+ ' + digits;
     else val = s.charAt(0).toUpperCase() + s.slice(1);
-    return [['Stamp Duty, Regn + Taxes', val]];
+    return [['Stamp Duty, Regn + Taxes', val]].concat(brokerageRows(l));
+  }
+  // Brokerage (Rent and Buy): "₹50,000" for a number, "2%" for a percentage,
+  // or the text as entered (e.g. "1 month rent").
+  function brokerageRows(l) {
+    var s = String(l.brokerage == null ? '' : l.brokerage).trim();
+    if (!s) return [];
+    var digits = s.replace(/[₹,\s]/g, '').replace(/^rs\.?/i, '');
+    var val;
+    if (/^\d+(\.\d+)?$/.test(digits)) val = inr(Math.round(Number(digits)));
+    else if (/^\d+(\.\d+)?%$/.test(digits)) val = digits;
+    else val = s.charAt(0).toUpperCase() + s.slice(1);
+    return [['Brokerage', val]];
   }
   function priceText(l) {
     if (l.search_type === 'Buy') return l.sale_price ? inrShort(l.sale_price) : 'Price on request';
@@ -54,6 +66,8 @@
   function badge(l) {
     if (l.status === 'sold_out') return ['Sold out', ''];
     if (l.status === 'rented_out') return ['Rented out', ''];
+    var custom = String(l.image_label == null ? '' : l.image_label).trim();
+    if (custom) return [custom, ''];
     return [l.search_type === 'Buy' ? 'For sale' : 'For rent', ''];
   }
   function specs(l) {
@@ -82,7 +96,7 @@
     var dep = (l.search_type !== 'Buy' && l.deposit_amount) ? inrShort(l.deposit_amount) : '';
     return '' +
       '<article class="card' + (closed ? ' is-closed' : '') + '"><a href="property-detail.html?id=' + l.id + '">' +
-      '<div class="media">' + media + '<span class="pill' + (closed ? ' pill-dark' : '') + '">' + b[0] + '</span></div>' +
+      '<div class="media">' + media + '<span class="pill' + (closed ? ' pill-dark' : '') + '">' + esc(b[0]) + '</span></div>' +
       '<div class="row"><div class="ttl"><h3>' + esc(title) + '</h3>' +
         '<p class="loc">' + esc([l.locality, l.city].filter(Boolean).join(', ')) + '</p></div>' +
         '<span class="price-col"><span class="price">' + priceText(l) + '</span>' +

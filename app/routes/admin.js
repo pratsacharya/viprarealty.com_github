@@ -171,7 +171,7 @@ router.get('/properties/:id/images/prune', requireMaster, checkCsrf, async (req,
 // ---------- add / edit ----------
 const PROP_FIELDS = ['project_title', 'description', 'search_type',
   'category_id', 'sub_category_id', 'city', 'locality', 'sale_price', 'monthly_rent', 'deposit_amount', 'maintenance', 'down_payment', 'stamp_duty',
-  'possession_date', 'bedrooms', 'bathrooms', 'carpet_area', 'builtup_area', 'total_floors', 'floor_no',
+  'possession_date', 'brokerage', 'image_label', 'bedrooms', 'bathrooms', 'carpet_area', 'builtup_area', 'total_floors', 'floor_no',
   'ceiling_height', 'status', 'featured'];
 
 async function loadFormData() {
@@ -254,6 +254,8 @@ router.post('/property-edit', photoUpload, async (req, res) => {
     maintenance: str('maintenance').slice(0, 80) || null,
     stamp_duty: str('stamp_duty').slice(0, 80) || null,
     down_payment: num('down_payment'), possession_date: str('possession_date'),
+    brokerage: str('brokerage').slice(0, 80) || null,
+    image_label: str('image_label').slice(0, 40) || null,
     status: ['active', 'inactive', 'sold_out', 'rented_out'].includes(str('status')) ? str('status') : 'active',
     featured: req.body.featured ? 1 : 0,
   };

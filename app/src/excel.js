@@ -50,7 +50,9 @@ function columnsFor(subName) {
     c('Monthly rent (₹) - Rent', { kind: 'monthly_rent', req: true, num: true, note: 'Required for Rent listings: an amount, or On request. Ignored for Buy.' }),
     c('Deposit (₹) - Rent', { kind: 'deposit_amount', num: true }),
     c('Maintenance - Rent', { kind: 'maintenance', note: 'A monthly amount (5000) or text (Included).' }),
+    c('Brokerage', { kind: 'brokerage', note: 'Rent and Buy. An amount (50000), a percentage (2%) or text (1 month rent, Nil).' }),
     c('Possession date', { kind: 'possession_date', note: 'DD-MM-YYYY or Immediate' }),
+    c('Label on photo', { kind: 'image_label', width: 18, note: 'Text on the photo (max 40 characters). Leave blank to show For sale / For rent.' }),
   ];
   for (const f of fields.highlightsFor(subName)) {
     const only = f.rentOnly ? ' - Rent' : f.buyOnly ? ' - Buy' : '';
@@ -161,6 +163,7 @@ function addInstructions(wb) {
     ['Google Drive photos: in Drive, Share → General access → "Anyone with the link", then Copy link and paste it here.'],
     ['Google Drive folder: paste the folder link to add every photo in it, in file-name order (name them 01, 02, ... to choose the order; the first is the card photo). Videos are skipped. Max 20 photos.'],
     ['Linked photos are downloaded and saved on the website when you import, so they keep showing even if you later delete them from Drive. Remove a link from the cell to remove that photo from the listing.'],
+    ['Brokerage is used for both Rent and Buy listings. Label on photo replaces the For sale / For rent label on the photo; leave it blank for the usual label.'],
     ['Highlights you hid with "Show on site" stay hidden; new values are shown.'],
     [''],
     ['Tip: download "Export all listings" first, edit that file, then import it. Do not rename sheets or headings.'],
@@ -329,6 +332,7 @@ async function saveRow(val, defs, sub, userId, seen) {
     sale_price: n('sale_price'), down_payment: n('down_payment'), stamp_duty: t('stamp_duty', 80),
     monthly_rent: n('monthly_rent'), deposit_amount: n('deposit_amount'), maintenance: t('maintenance', 80),
     possession_date: (val.possession_date || '').slice(0, 40) || null,
+    brokerage: t('brokerage', 80), image_label: t('image_label', 40),
   };
   if (stype === 'Rent') { data.sale_price = null; data.down_payment = null; data.stamp_duty = null; }
   else { data.monthly_rent = null; data.deposit_amount = null; data.maintenance = null; }

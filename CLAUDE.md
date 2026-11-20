@@ -66,7 +66,9 @@ Tables: `users`, `categories`, `sub_categories`, `properties`, `property_images`
 
 **`properties` key columns:** `project_title` (the single **Property Title** — the listing headline),
 `description`, `search_type` ENUM('Rent','Buy'), `category_id`, `sub_category_id`, `city`, `locality`,
-`sale_price`, `monthly_rent`, `deposit_amount`, `down_payment`, `possession_date`, `bedrooms`,
+`sale_price`, `monthly_rent`, `deposit_amount`, `down_payment`, `possession_date`, `brokerage`
+(text, Rent and Buy, shown in the price breakdown), `image_label` (text on the photo instead of
+For sale / For rent; Sold out / Rented out still win), `bedrooms`,
 `bathrooms`, `carpet_area`, `builtup_area`, `total_floors`, `floor_no`, `ceiling_height`,
 `status` ENUM('active','inactive','sold_out','rented_out'), `featured`, `created_by`, timestamps.
 

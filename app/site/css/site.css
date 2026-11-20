@@ -166,6 +166,7 @@ select.field.auto { width: auto; }
 .card .pill {
   position: absolute; top: 14px; left: 14px; font-size: 12px; font-weight: 600; letter-spacing: .06em;
   text-transform: uppercase; padding: 6px 10px; border-radius: var(--r-sm); background: #fff; color: var(--ink);
+  max-width: calc(100% - 28px); line-height: 1.35;
 }
 .card .pill-dark { background: var(--ink); color: #fff; }
 .card .row { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; margin-top: 16px; }
@@ -319,7 +320,7 @@ select.field.auto { width: auto; }
 .gallery-nav:hover { background: var(--tint); }
 .gallery-prev { left: 14px; }
 .gallery-next { right: 14px; }
-.gallery-pill { position: absolute; left: 14px; top: 14px; background: #fff; color: var(--ink); border-radius: var(--r-sm); padding: 6px 10px; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+.gallery-pill { position: absolute; left: 14px; top: 14px; background: #fff; color: var(--ink); border-radius: var(--r-sm); padding: 6px 10px; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; max-width: calc(100% - 28px); line-height: 1.35; }
 .gallery-pill-dark { background: var(--ink); color: #fff; }
 .gallery-count { position: absolute; left: 14px; bottom: 14px; background: rgba(21,25,34,.72); color: #fff; border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 600; }
 

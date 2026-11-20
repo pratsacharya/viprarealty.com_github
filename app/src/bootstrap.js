@@ -148,6 +148,18 @@ async function ensureStampDutyColumn() {
   if (n === 0) await pool.query('ALTER TABLE properties ADD COLUMN stamp_duty VARCHAR(80) NULL AFTER down_payment');
 }
 
+// Brokerage (price section, Rent and Buy) and the photo label text
+// (shown instead of "For sale" / "For rent"). Add the columns if missing.
+async function ensureBrokerageLabelColumns() {
+  const add = { brokerage: 'VARCHAR(80) NULL AFTER possession_date', image_label: 'VARCHAR(40) NULL AFTER brokerage' };
+  for (const [col, def] of Object.entries(add)) {
+    const [[{ n }]] = await pool.query(
+      "SELECT COUNT(*) n FROM information_schema.COLUMNS " +
+        "WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='properties' AND COLUMN_NAME=?", [col]);
+    if (n === 0) await pool.query(`ALTER TABLE properties ADD COLUMN ${col} ${def}`);
+  }
+}
+
 // Excel import downloads linked photos into the uploads folder; source_url keeps
 // the link each one came from, so importing the same link again is not a duplicate.
 async function ensureImageSourceColumn() {
@@ -198,4 +210,4 @@ function dbMessage(e) {
   return msg;
 }
 
-module.exports = { ensureSchema, dbMessage, ensureCategoryTree, dropLegacyColumns, ensureFieldsTable, ensureMaintenanceColumn, ensureStampDutyColumn, ensureImageSourceColumn, backfillHighlights, CATEGORY_TREE, RENAMED_SUBS };
+module.exports = { ensureSchema, dbMessage, ensureCategoryTree, dropLegacyColumns, ensureFieldsTable, ensureMaintenanceColumn, ensureStampDutyColumn, ensureImageSourceColumn, ensureBrokerageLabelColumns, backfillHighlights, CATEGORY_TREE, RENAMED_SUBS };

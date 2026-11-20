@@ -68,7 +68,8 @@ Tables: `users`, `categories`, `sub_categories`, `properties`, `property_images`
 `description`, `search_type` ENUM('Rent','Buy'), `category_id`, `sub_category_id`, `city`, `locality`,
 `sale_price`, `monthly_rent`, `deposit_amount`, `down_payment`, `possession_date`, `brokerage`
 (text, Rent and Buy, shown in the price breakdown), `image_label` (text on the photo instead of
-For sale / For rent; Sold out / Rented out still win), `bedrooms`,
+For sale / For rent; Sold out / Rented out still win), `brochure_url` / `brochure_file`
+(project brochure PDF, see 6c), `bedrooms`,
 `bathrooms`, `carpet_area`, `builtup_area`, `total_floors`, `floor_no`, `ceiling_height`,
 `status` ENUM('active','inactive','sold_out','rented_out'), `featured`, `created_by`, timestamps.
 
@@ -144,6 +145,19 @@ If a folder can't be opened, the listing's link photos are left as they are. Dow
 Each row saves in its own transaction. Headers are matched by text —
 renaming a field label in `fields.js` changes the header, so re-export after such a change. An unchanged
 export → import round trip leaves the data identical (verified).
+
+## 6c. Project brochure (`app/src/brochures.js`)
+
+Admin form field "Project brochure (PDF link)" and Excel column "Project brochure link". The link (Google
+Drive file → `drive.usercontent.google.com/download?...&confirm=t`, Dropbox → `dl=1`, or a direct PDF) is
+downloaded once (must start with `%PDF-`, ≤ 40 MB) into `UPLOAD_DIR/brochures`; `brochure_url` keeps the
+link, `brochure_file` the stored name. Same link again = no re-download; blank link = file removed; a failed
+download keeps the old brochure and is reported (admin: `?brochure_error=`; import: `report.warnings`).
+`/uploads/brochures` is blocked in `app.js`. The public API only gives `has_brochure`. On the detail page the
+"Download Project Brochure" button (next to "About this property") opens an enquiry + OTP pop-up; a
+verified enquiry for that listing adds its id to `req.session.brochures`, and `GET /api/brochure/:id`
+(`?check=1` = may I?) then sends the PDF. Admin view: `GET /adminvr/properties/:id/brochure`.
+**Needs MSG91 configured on live, otherwise no visitor receives the OTP.**
 
 ## 7. Routes
 

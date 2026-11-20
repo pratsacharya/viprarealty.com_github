@@ -430,6 +430,7 @@
       ].filter(function (r) { return r[1] != null && r[1] !== ''; }).map(function (r) {
         return '<div class="kv"><span>' + r[0] + '</span><span>' + esc(r[1]) + '</span></div>';
       }).join(''));
+      initBrochure(l);
       // enquire link carries the property id; WhatsApp carries a brief
       var enq = document.getElementById('d-enquire');
       if (enq) enq.href = 'contact.html?property_id=' + l.id;
@@ -471,6 +472,72 @@
     }
     function set(id, t) { var el = document.getElementById(id); if (el) el.textContent = String(t == null ? '' : t).trim(); }
     function setHTML(id, h) { var el = document.getElementById(id); if (el) el.innerHTML = h; }
+  }
+
+  // ---------------- Project brochure (detail page) ----------------
+  // The button shows only when the listing has a brochure. A visitor who has
+  // verified their mobile for this listing downloads straight away; anyone else
+  // gets the enquiry form + OTP first, and the download starts once verified.
+  function initBrochure(l) {
+    var btn = document.getElementById('d-brochure'), modal = document.getElementById('br-modal');
+    if (!btn || !modal || !l.has_brochure) return;
+    btn.hidden = false;
+    var url = '/api/brochure/' + l.id;
+    var form = document.getElementById('br-form'), otpBox = document.getElementById('br-otp');
+    var msg = document.getElementById('br-msg'), digits = modal.querySelectorAll('.br-digit');
+    var state = { enquiryId: null, mobile: null };
+    function note(t, ok) { msg.textContent = t || ''; msg.style.color = ok ? '#246a1f' : '#A2302F'; }
+    function download() { window.location.href = url; }
+    function open() {
+      form.hidden = false; otpBox.hidden = true; note('');
+      digits.forEach(function (d) { d.value = ''; });
+      modal.hidden = false; document.body.style.overflow = 'hidden';
+      var n = document.getElementById('br-name'); if (n) n.focus();
+    }
+    function close() { modal.hidden = true; document.body.style.overflow = ''; btn.focus(); }
+    btn.addEventListener('click', function () {
+      fetch(url + '?check=1').then(function (r) { return r.json(); })
+        .then(function (j) { if (j.allowed) download(); else open(); })
+        .catch(open);
+    });
+    document.getElementById('br-close').addEventListener('click', close);
+    modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !modal.hidden) close(); });
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var name = document.getElementById('br-name').value || '';
+      var mobile = (document.getElementById('br-mobile').value || '').replace(/[^0-9]/g, '');
+      if (!name.trim() || mobile.length !== 10) { note('Enter your name and a 10-digit mobile number.'); return; }
+      note('Sending OTP…', true);
+      fetch('/api/enquiry', {
+        method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ name: name, mobile: mobile, requirement: 'Requested the project brochure', property_id: l.id }),
+      }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+        .then(function (res) {
+          if (!res.ok) { note(res.j.error || 'Could not send the OTP. Try again.'); return; }
+          state.enquiryId = res.j.enquiry_id; state.mobile = mobile;
+          form.hidden = true; otpBox.hidden = false;
+          note('We sent a 4-digit code to +91 ' + mobile + '.', true);
+          digits[0].focus();
+        }).catch(function () { note('Network error. Try again.'); });
+    });
+    document.getElementById('br-verify').addEventListener('click', function () {
+      var otp = Array.prototype.map.call(digits, function (i) { return i.value; }).join('');
+      if (otp.length !== 4) { note('Enter the 4-digit code.'); return; }
+      fetch('/api/verify-otp', {
+        method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ mobile: state.mobile, otp: otp, enquiry_id: state.enquiryId }),
+      }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+        .then(function (res) {
+          if (!res.ok) { note(res.j.error || 'Invalid code.'); return; }
+          otpBox.hidden = true;
+          if (res.j.brochure) { note('Verified. Your brochure is downloading.', true); download(); }
+          else note('Verified. We will send you the brochure shortly.', true);
+        }).catch(function () { note('Network error. Try again.'); });
+    });
+    digits.forEach(function (inp, i) {
+      inp.addEventListener('input', function () { if (inp.value && digits[i + 1]) digits[i + 1].focus(); });
+    });
   }
 
   // ---------------- Contact / enquiry + OTP ----------------

@@ -43,6 +43,8 @@ CREATE TABLE IF NOT EXISTS properties (
   brokerage VARCHAR(80) NULL,
   possession_date VARCHAR(40) NULL,
   image_label VARCHAR(40) NULL,
+  brochure_url VARCHAR(500) NULL,
+  brochure_file VARCHAR(120) NULL,
   bedrooms INT NULL,
   bathrooms INT NULL,
   carpet_area INT NULL,

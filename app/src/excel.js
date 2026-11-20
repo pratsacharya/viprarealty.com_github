@@ -22,6 +22,7 @@ const fs = require('fs');
 const crypto = require('crypto');
 const { diskPath, isLocal, isMissing } = require('./uploads');
 const { processImage, removeImage } = require('./images');
+const { setBrochure } = require('./brochures');
 
 const CITIES = ['Bangalore', 'Mumbai', 'Navi Mumbai', 'Thane'];
 const STATUS = { active: 'Active', inactive: 'Inactive', sold_out: 'Sold out', rented_out: 'Rented out' };
@@ -66,6 +67,7 @@ function columnsFor(subName) {
       cols.push(c('Furnishing: ' + f.label, { kind: 'fu', key: f.key, width: 18, note: 'Rent listings that are semi- or fully furnished. Yes, or a count/note (e.g. 4).' }));
     }
   }
+  cols.push(c('Project brochure link', { kind: 'brochure', width: 30, note: 'Web link to the project brochure PDF (Google Drive file shared as "Anyone with the link", Dropbox or a direct PDF link). Downloaded and saved on the website; visitors get it after OTP. Leave blank to remove.' }));
   cols.push(c('Photo links', { kind: 'photos', width: 40, note: 'Web links to photos, separated by commas. A shared Google Drive folder link adds every photo in the folder (in file-name order). Each photo is downloaded and saved on the website. Google Drive links work when the file is shared as "Anyone with the link". Photos uploaded in the admin are not listed here and are never changed by import.' }));
   return cols;
 }
@@ -135,6 +137,7 @@ function valueFor(c, p, fv, links) {
       return v === undefined ? '' : (v || 'Yes');
     }
     case 'photos': return links.join(', ');
+    case 'brochure': return p.brochure_url || '';
     case 'sale_price': return p.search_type === 'Buy' ? (p.sale_price || 'On request') : '';
     case 'monthly_rent': return p.search_type === 'Rent' ? (p.monthly_rent || 'On request') : '';
     default: { const v = p[c.kind]; return v === null || v === undefined ? '' : v; }
@@ -164,6 +167,7 @@ function addInstructions(wb) {
     ['Google Drive folder: paste the folder link to add every photo in it, in file-name order (name them 01, 02, ... to choose the order; the first is the card photo). Videos are skipped. Max 20 photos.'],
     ['Linked photos are downloaded and saved on the website when you import, so they keep showing even if you later delete them from Drive. Remove a link from the cell to remove that photo from the listing.'],
     ['Brokerage is used for both Rent and Buy listings. Label on photo replaces the For sale / For rent label on the photo; leave it blank for the usual label.'],
+    ['Project brochure link: a web link to the brochure PDF (Google Drive file shared as "Anyone with the link"). It is downloaded and saved; visitors download it from the property page after verifying their mobile by OTP. Clear the cell to remove it.'],
     ['Highlights you hid with "Show on site" stay hidden; new values are shown.'],
     [''],
     ['Tip: download "Export all listings" first, edit that file, then import it. Do not rename sheets or headings.'],
@@ -228,6 +232,10 @@ async function importWorkbook(buffer, userId) {
         const res = await saveRow(val, defs, sub, userId, seen);
         if (res.added) { report.added++; report.added_ids.push(`${where} → ID ${res.id}`); } else report.updated++;
         for (const m of res.badLinks) report.warnings.push(`${where} (ID ${res.id}): ${m}`);
+        if ('brochure' in val) {
+          const b = await setBrochure(res.id, val.brochure);
+          if (b.error) report.warnings.push(`${where} (ID ${res.id}): brochure not added, ${b.error}`);
+        }
       } catch (e) {
         report.failed++; report.errors.push(`${where}: ${e.userMessage || e.message}`);
       }

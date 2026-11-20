@@ -25,6 +25,9 @@
     </div>
     <label>Property title<input name="project_title" value="<%= v('project_title') %>" placeholder="2 BHK Flat in Whitefield" required></label>
     <label>About this property<textarea name="description" rows="5"><%= v('description') %></textarea></label>
+    <label>Project brochure (PDF link)<input name="brochure_url" value="<%= v('brochure_url') %>" maxlength="500" placeholder="Google Drive, Dropbox or web link to a PDF"></label>
+    <p class="muted hint">The PDF is downloaded and saved on the website. Visitors get it after verifying their mobile number by OTP.
+      <% if (brochureSaved) { %><a href="/adminvr/properties/<%= p.id %>/brochure" target="_blank">View saved brochure</a>. Clear the link to remove it.<% } %></p>
     <label class="check"><input type="checkbox" name="featured" <%= v('featured')?'checked':'' %>> Feature on Home page</label>
   </details>
 

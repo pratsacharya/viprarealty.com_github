@@ -9,6 +9,7 @@ const { requireLogin, requireMaster, csrfToken, checkCsrf } = require('../src/mi
 const { sendSms } = require('../src/mailer');
 const { ensureSchema, dbMessage, CATEGORY_TREE, backfillHighlights, RENAMED_SUBS } = require('../src/bootstrap');
 const fields = require('../src/fields');
+const brochures = require('../src/brochures');
 
 // canonical display order for sub-categories, from the tree
 const SUB_ORDER = {};
@@ -141,6 +142,7 @@ router.get('/properties/:id/delete', requireMaster, checkCsrf, async (req, res) 
   const id = +req.params.id;
   const [imgs] = await pool.query('SELECT file_path FROM property_images WHERE property_id=?', [id]);
   for (const r of imgs) removeFile(r.file_path);
+  await brochures.setBrochure(id, '');
   await pool.query('DELETE FROM properties WHERE id=?', [id]);
   res.redirect('/adminvr/properties');
 });
@@ -229,7 +231,16 @@ router.get('/property-edit', async (req, res) => {
     const [imgs] = await pool.query('SELECT id, file_path FROM property_images WHERE property_id=? ORDER BY sort_order, id', [id]);
     images = imgs.map((i) => ({ id: i.id, src: isLocal(i.file_path) ? '/' + i.file_path : i.file_path, missing: isMissing(i.file_path) }));
   }
-  res.render('property-form', { ...base(req), page: 'property-edit', ...(await loadFormData()), p, isEdit: !!id, images, fv: await loadFieldValues(id), error: null });
+  const error = req.query.brochure_error ? 'Saved, but the brochure was not added: ' + String(req.query.brochure_error).slice(0, 200) : null;
+  res.render('property-form', { ...base(req), page: 'property-edit', ...(await loadFormData()), p, isEdit: !!id, images, fv: await loadFieldValues(id), error,
+    brochureSaved: !!id && brochures.exists(p.brochure_file) });
+});
+
+// the stored brochure PDF, for the admin to check
+router.get('/properties/:id/brochure', async (req, res) => {
+  const [[p]] = await pool.query('SELECT brochure_file FROM properties WHERE id=?', [+req.params.id]);
+  if (!p || !brochures.exists(p.brochure_file)) return res.status(404).send('No brochure saved for this listing.');
+  res.sendFile(brochures.fileOf(p.brochure_file), { headers: { 'Content-Type': 'application/pdf' } });
 });
 
 // Upload errors (file too large, too many files) get a plain message instead of a 500.
@@ -276,7 +287,7 @@ router.post('/property-edit', photoUpload, async (req, res) => {
 
   if (!data.project_title) {
     (req.files || []).forEach((f) => { try { fs.unlinkSync(f.path); } catch (e) {} });
-    return res.render('property-form', { ...base(req), page: 'property-edit', ...(await loadFormData()), p: { ...data, id: id || undefined }, isEdit: !!id, images: [], fv, error: 'Enter a property title.' });
+    return res.render('property-form', { ...base(req), page: 'property-edit', ...(await loadFormData()), p: { ...data, brochure_url: str('brochure_url'), id: id || undefined }, isEdit: !!id, images: [], fv, error: 'Enter a property title.', brochureSaved: false });
   }
 
   let pid;
@@ -306,6 +317,9 @@ router.post('/property-edit', photoUpload, async (req, res) => {
       [pid, stored, have]);
     have++;
   }
+  // project brochure: downloaded from its link (blank removes it)
+  const br = await brochures.setBrochure(pid, str('brochure_url'));
+  if (br.error) return res.redirect('/adminvr/property-edit?id=' + pid + '&brochure_error=' + encodeURIComponent(br.error));
   res.redirect('/adminvr/properties');
 });
 

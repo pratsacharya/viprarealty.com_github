@@ -444,3 +444,17 @@ select.field.auto { width: auto; }
   .footer-grid { grid-template-columns: 1fr auto auto; column-gap: 80px; }
   .footer-grid > * { grid-column: auto; }
 }
+
+/* Project brochure: button next to "About this property" + enquiry/OTP pop-up */
+.about-head { display: flex; align-items: center; justify-content: space-between; gap: 12px 16px; flex-wrap: wrap; margin-bottom: 12px; }
+.about-head h2 { margin: 0; }
+.btn-brochure { height: 40px; padding: 0 14px; font-size: 14px; gap: 8px; }
+.btn-brochure .icon { width: 16px; height: 16px; }
+.modal { position: fixed; inset: 0; z-index: 1000; background: rgba(13,16,22,.6); display: flex; align-items: center; justify-content: center; padding: 16px; overflow-y: auto; }
+.modal[hidden] { display: none; }
+.modal-card { position: relative; background: #fff; width: 100%; max-width: 460px; max-height: calc(100vh - 32px); overflow-y: auto; }
+.modal-card.enquiry { flex: none; }
+.modal-close { position: absolute; top: 12px; right: 12px; width: 40px; height: 40px; border: 0; border-radius: 50%; background: var(--tint); color: var(--ink); font-size: 24px; line-height: 1; cursor: pointer; }
+.modal-close:hover, .modal-close:focus-visible { background: var(--tint-2); }
+.modal-card h2 { padding-right: 44px; }
+@media (max-width: 520px) { .modal-card.enquiry { padding: 24px 18px; } .otp-digit { width: 44px; } }

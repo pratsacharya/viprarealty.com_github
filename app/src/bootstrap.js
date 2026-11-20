@@ -148,10 +148,14 @@ async function ensureStampDutyColumn() {
   if (n === 0) await pool.query('ALTER TABLE properties ADD COLUMN stamp_duty VARCHAR(80) NULL AFTER down_payment');
 }
 
-// Brokerage (price section, Rent and Buy) and the photo label text
-// (shown instead of "For sale" / "For rent"). Add the columns if missing.
+// Brokerage (price section, Rent and Buy), the photo label text (shown instead
+// of "For sale" / "For rent") and the project brochure. Add the columns if missing.
 async function ensureBrokerageLabelColumns() {
-  const add = { brokerage: 'VARCHAR(80) NULL AFTER possession_date', image_label: 'VARCHAR(40) NULL AFTER brokerage' };
+  const add = {
+    brokerage: 'VARCHAR(80) NULL AFTER possession_date', image_label: 'VARCHAR(40) NULL AFTER brokerage',
+    // project brochure PDF: the link it came from + the stored file (src/brochures.js)
+    brochure_url: 'VARCHAR(500) NULL AFTER image_label', brochure_file: 'VARCHAR(120) NULL AFTER brochure_url',
+  };
   for (const [col, def] of Object.entries(add)) {
     const [[{ n }]] = await pool.query(
       "SELECT COUNT(*) n FROM information_schema.COLUMNS " +

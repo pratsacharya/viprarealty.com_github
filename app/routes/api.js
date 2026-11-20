@@ -5,6 +5,7 @@ const { sendSms, notifyMasterEnquiry } = require('../src/mailer');
 const { isMissing } = require('../src/uploads');
 const { thumbOf } = require('../src/images');
 const fields = require('../src/fields');
+const brochures = require('../src/brochures');
 
 const router = express.Router();
 
@@ -87,7 +88,29 @@ router.post('/verify-otp', async (req, res) => {
     await notifyMasterEnquiry({ name: e.name, mobile: e.mobile, requirement: e.requirement, propLabel: label });
     await sendSms(mobile, 'Thank you for your enquiry, we will get in touch with you — Vipra Realty.');
   }
-  res.json({ ok: true, message: 'Enquiry verified. We will get in touch with you.' });
+  // A verified enquiry for a listing with a brochure unlocks its download for this visitor.
+  let brochure = null;
+  if (e && e.property_id && e.mobile === mobile) {
+    const [[p]] = await pool.query('SELECT brochure_file FROM properties WHERE id=?', [e.property_id]);
+    if (p && brochures.exists(p.brochure_file)) {
+      req.session.brochures = [...new Set([...(req.session.brochures || []), e.property_id])];
+      brochure = '/api/brochure/' + e.property_id;
+    }
+  }
+  res.json({ ok: true, message: 'Enquiry verified. We will get in touch with you.', brochure });
+});
+
+// Project brochure PDF: only for a visitor who verified an enquiry for this
+// listing by OTP (kept in their session). ?check=1 only answers whether they may.
+router.get('/brochure/:id', async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const allowed = (req.session.brochures || []).includes(id);
+  const [[p]] = await pool.query("SELECT project_title, brochure_file FROM properties WHERE id=? AND status<>'inactive'", [id || 0]);
+  if (!p || !brochures.exists(p.brochure_file)) return res.status(404).json({ error: 'No brochure for this listing.' });
+  if (req.query.check) return res.json({ allowed });
+  if (!allowed) return res.status(403).json({ error: 'Verify your mobile number to download the brochure.' });
+  const name = ((p.project_title || '').replace(/[^\w\s.,()-]/g, '').trim().slice(0, 80) || 'Property ' + id) + ' - Brochure.pdf';
+  res.download(brochures.fileOf(p.brochure_file), name);
 });
 
 // Add highlights / amenities / furnishings (catalog order, labels from src/fields.js) to each listing.
@@ -143,6 +166,9 @@ router.get('/listings', async (req, res) => {
     // skip records whose file is gone, so a dead photo never becomes the card image
     r.images = imgs.map((i) => i.file_path).filter((f) => !isMissing(f));
     r.thumbs = r.images.map(thumbOf);   // smaller WebP for property cards
+    // brochure: only whether there is one; the file itself needs an OTP check
+    r.has_brochure = brochures.exists(r.brochure_file);
+    delete r.brochure_url; delete r.brochure_file;
   }
   await attachFields(rows);
   res.json({ count: rows.length, listings: rows });

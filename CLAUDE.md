@@ -108,8 +108,8 @@ Extra listing fields are a **fixed catalog in code**; values live in `property_f
 
 - **Highlights** — one set per sub-category (`HIGHLIGHTS['Office Space']`, …). Each has a key, label,
   `text`/`select` type; per listing a value + "show on site" flag. `rentOnly` fields appear for Rent only.
-- **Project details** (`PROJECT` in fields.js) — Project Area, Total Towers, Total Units, Unit Type (key `unit_types`; old "Unit Types" Excel header still imports),
-  Tower / Block, Address, Landmark, Project Scale, Project RERA Number, Nearest Metro Station: text highlights appended to every type
+- **Project details** (`PROJECT` in fields.js) — Project Name, Project Area, Total Towers, Total Units, Unit Type (key `unit_types`; old "Unit Types" Excel header still imports),
+  Tower / Block, Registration Status (Registered / Unregistered), Address, Landmark, Project Scale, Project RERA Number, Nearest Metro Station: highlights appended to every type
   (`HIGHLIGHTS` = `BY_TYPE` + `PROJECT`), so the first-four stat tiles are unchanged.
 - **Amenities** — one list for all types; tick + optional value.
 - **Furnishings** — shown only when `search_type='Rent'` and the `furnishing` highlight is

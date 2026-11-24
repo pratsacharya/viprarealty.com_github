@@ -474,69 +474,187 @@
     function setHTML(id, h) { var el = document.getElementById(id); if (el) el.innerHTML = h; }
   }
 
-  // ---------------- Project brochure (detail page) ----------------
-  // The button shows only when the listing has a brochure. A visitor who has
-  // verified their mobile for this listing downloads straight away; anyone else
-  // gets the enquiry form + OTP first, and the download starts once verified.
+  // ---------------- Project brochure flipbook (detail page) ----------------
+  // "View Project Brochure" swaps the photo gallery for a page-flip book of the
+  // listing's PDF (PDF.js draws the pages, StPageFlip turns them), with arrows,
+  // a slideshow, full screen and an X to close. The brochure is for viewing
+  // only: the server sends it scrambled (see /api/brochure/:id), pages are
+  // drawn on canvases, and right-click, drag, save and print are blocked here.
+  function loadScript(src) {
+    return new Promise(function (ok, fail) {
+      if (document.querySelector('script[src="' + src + '"]')) return ok();
+      var s = document.createElement('script');
+      s.src = src; s.onload = function () { ok(); }; s.onerror = fail;
+      document.head.appendChild(s);
+    });
+  }
   function initBrochure(l) {
-    var btn = document.getElementById('d-brochure'), modal = document.getElementById('br-modal');
-    if (!btn || !modal || !l.has_brochure) return;
+    var btn = document.getElementById('d-brochure'), book = document.getElementById('d-book');
+    if (!btn || !book || !l.has_brochure) return;
     btn.hidden = false;
-    var url = '/api/brochure/' + l.id;
-    var form = document.getElementById('br-form'), otpBox = document.getElementById('br-otp');
-    var msg = document.getElementById('br-msg'), digits = modal.querySelectorAll('.br-digit');
-    var state = { enquiryId: null, mobile: null };
-    function note(t, ok) { msg.textContent = t || ''; msg.style.color = ok ? '#246a1f' : '#A2302F'; }
-    function download() { window.location.href = url; }
-    function open() {
-      form.hidden = false; otpBox.hidden = true; note('');
-      digits.forEach(function (d) { d.value = ''; });
-      modal.hidden = false; document.body.style.overflow = 'hidden';
-      var n = document.getElementById('br-name'); if (n) n.focus();
+    var gallery = document.getElementById('d-gallery'), stage = document.getElementById('bk-stage');
+    var msg = document.getElementById('bk-msg'), count = document.getElementById('bk-count');
+    var prev = document.getElementById('bk-prev'), next = document.getElementById('bk-next');
+    var play = document.getElementById('bk-play'), full = document.getElementById('bk-full');
+    var pdfDoc = null, flip = null, timer = null, openId = 0;
+
+    function say(t) { msg.textContent = t || ''; msg.hidden = !t; }
+    function getPdf() {
+      if (pdfDoc) return Promise.resolve(pdfDoc);
+      return Promise.all([loadScript('vendor/pdf.min.js'), loadScript('vendor/page-flip.browser.js')])
+        .then(function () {
+          return fetch('/api/brochure/' + l.id, { headers: { 'X-Brochure-View': '1' }, cache: 'no-store' });
+        })
+        .then(function (r) {
+          if (!r.ok) throw new Error('fetch');
+          var hex = r.headers.get('X-Brochure-Key') || '', key = new Uint8Array(32);
+          for (var i = 0; i < 32; i++) key[i] = parseInt(hex.substr(i * 2, 2), 16);
+          return r.arrayBuffer().then(function (b) {
+            var d = new Uint8Array(b);
+            for (var j = 0; j < d.length; j++) d[j] ^= key[j & 31];
+            var lib = window.pdfjsLib;
+            lib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js';
+            return lib.getDocument({ data: d, isEvalSupported: false }).promise;
+          });
+        })
+        .then(function (doc) { pdfDoc = doc; return doc; });
     }
-    function close() { modal.hidden = true; document.body.style.overflow = ''; btn.focus(); }
-    btn.addEventListener('click', function () {
-      fetch(url + '?check=1').then(function (r) { return r.json(); })
-        .then(function (j) { if (j.allowed) download(); else open(); })
-        .catch(open);
+    function stopShow() {
+      clearInterval(timer); timer = null;
+      play.setAttribute('aria-pressed', 'false'); play.setAttribute('aria-label', 'Play slideshow');
+    }
+    function startShow() {
+      if (!flip) return;
+      play.setAttribute('aria-pressed', 'true'); play.setAttribute('aria-label', 'Pause slideshow');
+      timer = setInterval(function () {
+        if (!flip) return stopShow();
+        if (flip.getCurrentPageIndex() >= flip.getPageCount() - (flip.getOrientation() === 'landscape' ? 2 : 1)) flip.flip(0);
+        else flip.flipNext();
+      }, 3500);
+    }
+    function updateCount() {
+      if (!flip) { count.textContent = ''; return; }
+      var n = flip.getPageCount(), i = flip.getCurrentPageIndex();
+      var two = flip.getOrientation() === 'landscape' && i > 0 && i < n - 1;
+      count.textContent = (two ? (i + 1) + '–' + (i + 2) : (i + 1)) + ' of ' + n;
+      prev.disabled = i <= 0;
+      next.disabled = i + (two ? 2 : 1) >= n;
+    }
+    var pages = [], ratio = 0.7;
+    function teardown() {
+      if (flip) { try { flip.destroy(); } catch (_) { /* ignore */ } flip = null; }
+      Array.prototype.forEach.call(stage.querySelectorAll('.book-flip'), function (el) { el.remove(); });
+    }
+    // Build the book to fit the stage: two pages side by side when there is
+    // room, one page at a time on narrow screens. Rebuilt on resize.
+    function build(at) {
+      teardown();
+      if (!pages.length) return;
+      var W = stage.clientWidth, H = stage.clientHeight;
+      var spread = W >= 2 * H * ratio * 0.75;
+      var bw = Math.floor(Math.min(W, (spread ? 2 : 1) * H * ratio));
+      var holder = document.createElement('div'), root = document.createElement('div');
+      holder.className = 'book-flip';
+      holder.style.width = bw + 'px'; // StPageFlip sets its own root to 100% wide
+      holder.appendChild(root);
+      stage.appendChild(holder);
+      pages.forEach(function (pg) { root.appendChild(pg); });
+      var pw = spread ? Math.floor(bw / 2) : bw;
+      flip = new window.St.PageFlip(root, {
+        width: pw, height: Math.floor(pw / ratio), size: 'stretch',
+        minWidth: spread ? 50 : Math.ceil(bw / 2) + 1, maxWidth: 3000, minHeight: 50, maxHeight: 4000,
+        showCover: true, usePortrait: true, autoSize: true,
+        maxShadowOpacity: 0.45, flippingTime: 900, mobileScrollSupport: false, startPage: at || 0,
+      });
+      flip.loadFromHTML(pages);
+      flip.on('flip', updateCount);
+      flip.on('changeOrientation', updateCount);
+      flip.on('changeState', function (e) { if (e.data === 'user_fold' || e.data === 'fold_corner') stopShow(); });
+      updateCount();
+    }
+    var resizeT = null;
+    window.addEventListener('resize', function () {
+      if (book.hidden || !flip) return;
+      clearTimeout(resizeT);
+      resizeT = setTimeout(function () { if (flip) build(flip.getCurrentPageIndex()); }, 200);
     });
-    document.getElementById('br-close').addEventListener('click', close);
-    modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !modal.hidden) close(); });
-    form.addEventListener('submit', function (e) {
-      e.preventDefault();
-      var name = document.getElementById('br-name').value || '';
-      var mobile = (document.getElementById('br-mobile').value || '').replace(/[^0-9]/g, '');
-      if (!name.trim() || mobile.length !== 10) { note('Enter your name and a 10-digit mobile number.'); return; }
-      note('Sending OTP…', true);
-      fetch('/api/enquiry', {
-        method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ name: name, mobile: mobile, requirement: 'Requested the project brochure', property_id: l.id }),
-      }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
-        .then(function (res) {
-          if (!res.ok) { note(res.j.error || 'Could not send the OTP. Try again.'); return; }
-          state.enquiryId = res.j.enquiry_id; state.mobile = mobile;
-          form.hidden = true; otpBox.hidden = false;
-          note('We sent a 4-digit code to +91 ' + mobile + '.', true);
-          digits[0].focus();
-        }).catch(function () { note('Network error. Try again.'); });
+    function render(doc, id) {
+      return doc.getPage(1).then(function (p1) {
+        if (id !== openId) return;
+        var vp = p1.getViewport({ scale: 1 });
+        ratio = vp.width / vp.height;
+        pages = [];
+        for (var n = 1; n <= doc.numPages; n++) {
+          var pg = document.createElement('div');
+          pg.className = 'book-page';
+          if (n === 1 || n === doc.numPages) pg.setAttribute('data-density', 'hard');
+          pg.appendChild(document.createElement('canvas'));
+          pages.push(pg);
+        }
+        // draw each page once, sharp enough for full screen, first pages first
+        var px = Math.min(1600, Math.max(800, Math.round(Math.max(screen.width, screen.height) / 2 * (window.devicePixelRatio || 1))));
+        function draw(i) {
+          return doc.getPage(i + 1).then(function (page) {
+            if (id !== openId) return;
+            var v0 = page.getViewport({ scale: 1 }), v = page.getViewport({ scale: px / v0.width });
+            var c = pages[i].querySelector('canvas');
+            c.width = Math.round(v.width); c.height = Math.round(v.height);
+            return page.render({ canvasContext: c.getContext('2d'), viewport: v }).promise;
+          }).catch(function () { /* a page that fails stays blank */ });
+        }
+        function drawFrom(i) {
+          if (id !== openId || i >= pages.length) return;
+          draw(i).then(function () { drawFrom(i + 1); });
+        }
+        // show the book once the first pages are ready; the rest follow in the background
+        var first = Math.min(3, pages.length), ready = [];
+        for (var k = 0; k < first; k++) ready.push(draw(k));
+        return Promise.all(ready).then(function () {
+          if (id !== openId) return;
+          say(''); build(0);
+          drawFrom(first);
+        });
+      });
+    }
+    function open() {
+      var id = ++openId;
+      stopShow(); teardown();
+      gallery.hidden = true; book.hidden = false; say('Opening brochure…'); count.textContent = '';
+      prev.disabled = next.disabled = true;
+      var hd = document.querySelector('header'), off = (hd && getComputedStyle(hd).position !== 'static' ? hd.offsetHeight : 0) + 12;
+      document.body.classList.add('book-open');
+      var top = book.getBoundingClientRect().top + window.pageYOffset - off;
+      window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+      getPdf().then(function (doc) { if (id === openId) return render(doc, id); })
+        .catch(function () { if (id === openId) say('Sorry, the brochure could not be opened. Please try again.'); });
+    }
+    function close() {
+      openId++;
+      if (document.fullscreenElement === book) document.exitFullscreen().catch(function () {});
+      stopShow(); teardown(); pages = [];
+      book.hidden = true; gallery.hidden = false; document.body.classList.remove('book-open'); btn.focus({ preventScroll: true });
+    }
+    btn.addEventListener('click', open);
+    document.getElementById('bk-close').addEventListener('click', close);
+    prev.addEventListener('click', function () { stopShow(); if (flip) flip.flipPrev(); });
+    next.addEventListener('click', function () { stopShow(); if (flip) flip.flipNext(); });
+    play.addEventListener('click', function () { if (timer) stopShow(); else startShow(); });
+    full.addEventListener('click', function () {
+      if (document.fullscreenElement) document.exitFullscreen().catch(function () {});
+      else if (book.requestFullscreen) book.requestFullscreen().catch(function () {});
     });
-    document.getElementById('br-verify').addEventListener('click', function () {
-      var otp = Array.prototype.map.call(digits, function (i) { return i.value; }).join('');
-      if (otp.length !== 4) { note('Enter the 4-digit code.'); return; }
-      fetch('/api/verify-otp', {
-        method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ mobile: state.mobile, otp: otp, enquiry_id: state.enquiryId }),
-      }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
-        .then(function (res) {
-          if (!res.ok) { note(res.j.error || 'Invalid code.'); return; }
-          otpBox.hidden = true;
-          if (res.j.brochure) { note('Verified. Your brochure is downloading.', true); download(); }
-          else note('Verified. We will send you the brochure shortly.', true);
-        }).catch(function () { note('Network error. Try again.'); });
+    if (!book.requestFullscreen) full.hidden = true;
+    // viewing only: no right-click / long-press menu, no dragging pages out
+    ['contextmenu', 'dragstart', 'copy'].forEach(function (t) {
+      book.addEventListener(t, function (e) { e.preventDefault(); });
     });
-    digits.forEach(function (inp, i) {
-      inp.addEventListener('input', function () { if (inp.value && digits[i + 1]) digits[i + 1].focus(); });
+    document.addEventListener('keydown', function (e) {
+      if (book.hidden) return;
+      var k = (e.key || '').toLowerCase();
+      if ((e.ctrlKey || e.metaKey) && (k === 's' || k === 'p')) { e.preventDefault(); return; }
+      if (k === 'escape' && !document.fullscreenElement) close();
+      else if (k === 'arrowleft' && flip) { stopShow(); flip.flipPrev(); }
+      else if (k === 'arrowright' && flip) { stopShow(); flip.flipNext(); }
     });
   }
 

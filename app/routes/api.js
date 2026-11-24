@@ -1,5 +1,6 @@
 const express = require('express');
 const crypto = require('crypto');
+const fs = require('fs');
 const pool = require('../src/db');
 const { sendSms, notifyMasterEnquiry } = require('../src/mailer');
 const { isMissing } = require('../src/uploads');
@@ -88,29 +89,29 @@ router.post('/verify-otp', async (req, res) => {
     await notifyMasterEnquiry({ name: e.name, mobile: e.mobile, requirement: e.requirement, propLabel: label });
     await sendSms(mobile, 'Thank you for your enquiry, we will get in touch with you — Vipra Realty.');
   }
-  // A verified enquiry for a listing with a brochure unlocks its download for this visitor.
-  let brochure = null;
-  if (e && e.property_id && e.mobile === mobile) {
-    const [[p]] = await pool.query('SELECT brochure_file FROM properties WHERE id=?', [e.property_id]);
-    if (p && brochures.exists(p.brochure_file)) {
-      req.session.brochures = [...new Set([...(req.session.brochures || []), e.property_id])];
-      brochure = '/api/brochure/' + e.property_id;
-    }
-  }
-  res.json({ ok: true, message: 'Enquiry verified. We will get in touch with you.', brochure });
+  res.json({ ok: true, message: 'Enquiry verified. We will get in touch with you.' });
 });
 
-// Project brochure PDF: only for a visitor who verified an enquiry for this
-// listing by OTP (kept in their session). ?check=1 only answers whether they may.
+// Project brochure for the flipbook viewer on the detail page. It is meant to be
+// viewed, not saved: the file is never sent as a PDF download. Only the viewer's
+// request (with the X-Brochure-View header) gets the bytes, scrambled with a
+// one-time key the viewer uses to restore them, so opening the address directly
+// or saving the response from the browser's network panel gives no usable PDF.
 router.get('/brochure/:id', async (req, res) => {
   const id = parseInt(req.params.id, 10);
-  const allowed = (req.session.brochures || []).includes(id);
-  const [[p]] = await pool.query("SELECT project_title, brochure_file FROM properties WHERE id=? AND status<>'inactive'", [id || 0]);
+  const [[p]] = await pool.query("SELECT brochure_file FROM properties WHERE id=? AND status<>'inactive'", [id || 0]);
   if (!p || !brochures.exists(p.brochure_file)) return res.status(404).json({ error: 'No brochure for this listing.' });
-  if (req.query.check) return res.json({ allowed });
-  if (!allowed) return res.status(403).json({ error: 'Verify your mobile number to download the brochure.' });
-  const name = ((p.project_title || '').replace(/[^\w\s.,()-]/g, '').trim().slice(0, 80) || 'Property ' + id) + ' - Brochure.pdf';
-  res.download(brochures.fileOf(p.brochure_file), name);
+  if (req.get('X-Brochure-View') !== '1') return res.status(403).json({ error: 'Open the brochure from the property page.' });
+  const buf = await fs.promises.readFile(brochures.fileOf(p.brochure_file));
+  const key = crypto.randomBytes(32);
+  for (let i = 0; i < buf.length; i++) buf[i] ^= key[i & 31];
+  res.set({
+    'Content-Type': 'application/octet-stream',
+    'Cache-Control': 'no-store',
+    'X-Content-Type-Options': 'nosniff',
+    'X-Brochure-Key': key.toString('hex'),
+  });
+  res.send(buf);
 });
 
 // Add highlights / amenities / furnishings (catalog order, labels from src/fields.js) to each listing.
@@ -166,7 +167,7 @@ router.get('/listings', async (req, res) => {
     // skip records whose file is gone, so a dead photo never becomes the card image
     r.images = imgs.map((i) => i.file_path).filter((f) => !isMissing(f));
     r.thumbs = r.images.map(thumbOf);   // smaller WebP for property cards
-    // brochure: only whether there is one; the file itself needs an OTP check
+    // brochure: only whether there is one; the viewer loads it from /api/brochure/:id
     r.has_brochure = brochures.exists(r.brochure_file);
     delete r.brochure_url; delete r.brochure_file;
   }

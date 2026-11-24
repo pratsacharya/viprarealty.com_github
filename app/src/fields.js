@@ -56,7 +56,21 @@ const VILLAS_COMMON = [
   t('garden_area', 'Garden Area (sq ft)'),
 ];
 
-const HIGHLIGHTS = {
+// Project-level details, added at the end of every type's highlights
+// (the first four filled highlights stay the stat tiles on the property page).
+const PROJECT = [
+  t('project_area', 'Project Area', { placeholder: '10 acres' }),
+  t('total_towers', 'Total Towers'),
+  t('total_units', 'Total Units'),
+  t('unit_types', 'Unit Types', { placeholder: '2, 3 & 4 BHK' }),
+  t('address', 'Address'),
+  t('landmark', 'Landmark'),
+  t('project_scale', 'Project Scale'),
+  t('rera_number', 'Project RERA Number'),
+  t('nearest_metro', 'Nearest Metro Station', { placeholder: 'Whitefield (2 km)' }),
+];
+
+const BY_TYPE = {
   // ---------- Residential ----------
   'Flat': FLATS,
   'Pent House': [
@@ -155,6 +169,8 @@ const HIGHLIGHTS = {
     s('availability', 'Availability', ['Immediate', 'Within 3 months', 'Within 6 months', 'Later']),
   ],
 };
+
+const HIGHLIGHTS = Object.fromEntries(Object.entries(BY_TYPE).map(([name, list]) => [name, [...list, ...PROJECT]]));
 
 const item = (label) => ({ key: label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, ''), label });
 

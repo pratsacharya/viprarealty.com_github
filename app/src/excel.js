@@ -52,7 +52,8 @@ function columnsFor(subName) {
     c('Deposit (₹) - Rent', { kind: 'deposit_amount', num: true }),
     c('Maintenance - Rent', { kind: 'maintenance', note: 'A monthly amount (5000) or text (Included).' }),
     c('Brokerage', { kind: 'brokerage', note: 'Rent and Buy. An amount (50000), a percentage (2%) or text (1 month rent, Nil).' }),
-    c('Possession date', { kind: 'possession_date', note: 'DD-MM-YYYY or Immediate' }),
+    c('Expected possession - Buy', { kind: 'possession_date', note: 'Buy listings: DD-MM-YYYY or Ready to move. Ignored for Rent.' }),
+    c('Available from - Rent', { kind: 'available_from', note: 'Rent listings: DD-MM-YYYY or Immediate. Ignored for Buy.' }),
     c('Label on photo', { kind: 'image_label', width: 18, note: 'Text on the photo (max 40 characters). Leave blank to show For sale / For rent.' }),
   ];
   for (const f of fields.highlightsFor(subName)) {
@@ -216,6 +217,7 @@ async function importWorkbook(buffer, userId) {
     if (!sub) continue;                     // instructions or unknown sheets
     const defs = columnsFor(sub.name);
     const byHeader = Object.fromEntries(defs.map((d) => [d.header.toLowerCase(), d]));
+    byHeader['possession date'] = { kind: 'possession_old' };   // older files: one column for both types
     const colMap = [];                      // column index -> def
     ws.getRow(1).eachCell((cell, i) => { const d = byHeader[cellText(cell).toLowerCase()]; if (d) colMap[i] = d; });
     if (!colMap.some((d) => d && d.kind === 'project_title')) {
@@ -339,11 +341,16 @@ async function saveRow(val, defs, sub, userId, seen) {
     featured: (val.featured || '').toLowerCase() === 'yes' ? 1 : 0,
     sale_price: n('sale_price'), down_payment: n('down_payment'), stamp_duty: t('stamp_duty', 80),
     monthly_rent: n('monthly_rent'), deposit_amount: n('deposit_amount'), maintenance: t('maintenance', 80),
-    possession_date: (val.possession_date || '').slice(0, 40) || null,
+    possession_date: t('possession_date', 40), available_from: t('available_from', 40),
     brokerage: t('brokerage', 80), image_label: t('image_label', 40),
   };
-  if (stype === 'Rent') { data.sale_price = null; data.down_payment = null; data.stamp_duty = null; }
-  else { data.monthly_rent = null; data.deposit_amount = null; data.maintenance = null; }
+  // a file from before the split has one "Possession date" column: use it for the row's type
+  if ('possession_old' in val) {
+    if (stype === 'Buy' && !('possession_date' in val)) data.possession_date = t('possession_old', 40);
+    if (stype === 'Rent' && !('available_from' in val)) data.available_from = t('possession_old', 40);
+  }
+  if (stype === 'Rent') { data.sale_price = null; data.down_payment = null; data.stamp_duty = null; data.possession_date = null; }
+  else { data.monthly_rent = null; data.deposit_amount = null; data.maintenance = null; data.available_from = null; }
 
   // extra fields, same rules as the admin form
   const oldDisplay = {};

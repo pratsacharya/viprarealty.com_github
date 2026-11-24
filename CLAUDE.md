@@ -66,7 +66,8 @@ Tables: `users`, `categories`, `sub_categories`, `properties`, `property_images`
 
 **`properties` key columns:** `project_title` (the single **Property Title** — the listing headline),
 `description`, `search_type` ENUM('Rent','Buy'), `category_id`, `sub_category_id`, `city`, `locality`,
-`sale_price`, `monthly_rent`, `deposit_amount`, `down_payment`, `possession_date`, `brokerage`
+`sale_price`, `monthly_rent`, `deposit_amount`, `down_payment`, `possession_date` (Buy only, shown as
+"Expected possession"), `available_from` (Rent only, "Available from"), `brokerage`
 (text, Rent and Buy, shown in the price breakdown), `image_label` (text on the photo instead of
 For sale / For rent; Sold out / Rented out still win), `brochure_url` / `brochure_file`
 (project brochure PDF, see 6c), `bedrooms`,
@@ -125,7 +126,7 @@ Extra listing fields are a **fixed catalog in code**; values live in `property_f
 Admin page **Import / Export** (`/adminvr/import`, master only). One sheet per sub-category
 (`CATEGORY_TREE` order) plus a "How to use" sheet. Columns come from `columnsFor(subName)`: Property
 ID, basics, price fields (`- Buy` / `- Rent` suffix), the sub-category's highlights, `Amenity: …`,
-`Furnishing: …` (types with a Furnishing highlight), `Photo links`. Mandatory headers are dark green
+`Furnishing: …` (types with a Furnishing highlight), `Photo links`. Older files with a single "Possession date" column still import (used for the row's type). Mandatory headers are dark green
 (title, Looking to, Status, City, Locality, Sale price for Buy / Monthly rent for Rent — an amount or
 "On request"). Dropdowns via data validation.
 

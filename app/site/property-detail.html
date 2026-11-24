@@ -35,6 +35,29 @@
     <section class="wrap detail-top">
       <nav class="crumbs" aria-label="Breadcrumb"><a href="index.html">Home</a> <span aria-hidden="true">/</span> <a href="properties.html">Properties</a> <span aria-hidden="true">/</span> <span id="d-crumb">Property</span></nav>
       <div class="gallery" id="d-gallery"></div>
+      <!-- Project brochure flipbook: takes the place of the photos while open -->
+      <div class="book" id="d-book" role="region" aria-label="Project brochure" hidden>
+        <div class="book-top">
+          <span class="book-title">Project Brochure</span>
+          <button type="button" class="book-x" id="bk-close" aria-label="Close brochure">&times;</button>
+        </div>
+        <div class="book-stage" id="bk-stage">
+          <div class="book-msg" id="bk-msg" aria-live="polite">Opening brochure…</div>
+        </div>
+        <div class="book-bar">
+          <button type="button" class="book-btn" id="bk-prev" aria-label="Previous page">&#8249;</button>
+          <span class="book-count" id="bk-count" aria-live="polite"></span>
+          <button type="button" class="book-btn" id="bk-next" aria-label="Next page">&#8250;</button>
+          <span class="book-sep" aria-hidden="true"></span>
+          <button type="button" class="book-btn book-play" id="bk-play" aria-label="Play slideshow" aria-pressed="false">
+            <svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>
+            <svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z" fill="currentColor"/></svg>
+          </button>
+          <button type="button" class="book-btn" id="bk-full" aria-label="Full screen">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+          </button>
+        </div>
+      </div>
     </section>
 
     <div class="wrap detail-layout">
@@ -51,8 +74,8 @@
         <div class="about-head">
           <h2>About this property</h2>
           <button type="button" class="btn btn-line btn-brochure" id="d-brochure" hidden>
-            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
-            Download Project Brochure
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 6.5C10 5 7 4.5 3 5v13c4-.5 7 0 9 1.5 2-1.5 5-2 9-1.5V5c-4-.5-7 0-9 1.5zM12 6.5v13"/></svg>
+            View Project Brochure
           </button>
         </div>
         <p class="prose" id="d-desc"></p>
@@ -116,40 +139,6 @@
           <div><b>Vipra Realty</b><span>Your property partner · +91 91085 98918</span></div>
         </div>
       </aside>
-    </div>
-
-    <!-- Brochure download: enquiry + OTP, then the PDF downloads -->
-    <div class="modal" id="br-modal" role="dialog" aria-modal="true" aria-labelledby="br-title" hidden>
-      <div class="modal-card enquiry">
-        <button type="button" class="modal-close" id="br-close" aria-label="Close">&times;</button>
-        <h2 id="br-title">Download Project Brochure</h2>
-        <p>Share your details and verify your mobile with a quick OTP. The brochure downloads right after.</p>
-        <form id="br-form" novalidate>
-          <label class="fld"><span class="label">Name</span>
-            <input class="field" type="text" id="br-name" placeholder="Your full name" autocomplete="name">
-          </label>
-          <div class="fld">
-            <label class="label" for="br-mobile">Mobile number</label>
-            <div class="phone-row">
-              <span class="cc">+91</span>
-              <input class="field" type="tel" id="br-mobile" placeholder="10-digit mobile number" maxlength="10" inputmode="numeric" autocomplete="tel-national">
-            </div>
-            <p class="help">A 4-digit OTP will be sent to this number.</p>
-          </div>
-          <button type="submit" class="btn btn-ink btn-block">Send OTP</button>
-        </form>
-        <div class="otp" id="br-otp" hidden>
-          <span class="label">Enter the 4-digit code we sent you</span>
-          <div class="otp-row">
-            <input class="otp-digit br-digit" maxlength="1" inputmode="numeric" aria-label="OTP digit 1">
-            <input class="otp-digit br-digit" maxlength="1" inputmode="numeric" aria-label="OTP digit 2">
-            <input class="otp-digit br-digit" maxlength="1" inputmode="numeric" aria-label="OTP digit 3">
-            <input class="otp-digit br-digit" maxlength="1" inputmode="numeric" aria-label="OTP digit 4">
-          </div>
-          <button type="button" class="btn btn-teal btn-block" id="br-verify" style="margin-top: 14px;">Verify &amp; download</button>
-        </div>
-        <div class="form-msg" id="br-msg" aria-live="polite"></div>
-      </div>
     </div>
 
     <section class="similar">

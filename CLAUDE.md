@@ -158,10 +158,14 @@ downloaded once (must start with `%PDF-`, ≤ 40 MB) into `UPLOAD_DIR/brochures`
 link, `brochure_file` the stored name. Same link again = no re-download; blank link = file removed; a failed
 download keeps the old brochure and is reported (admin: `?brochure_error=`; import: `report.warnings`).
 `/uploads/brochures` is blocked in `app.js`. The public API only gives `has_brochure`. On the detail page the
-"Download Project Brochure" button (next to "About this property") opens an enquiry + OTP pop-up; a
-verified enquiry for that listing adds its id to `req.session.brochures`, and `GET /api/brochure/:id`
-(`?check=1` = may I?) then sends the PDF. Admin view: `GET /adminvr/properties/:id/brochure`.
-**Needs MSG91 configured on live, otherwise no visitor receives the OTP.**
+"View Project Brochure" button (next to "About this property") swaps the photo gallery for a page-flip book
+(`initBrochure` in site.js; no enquiry/OTP): PDF.js draws each page on a canvas and StPageFlip turns them
+(both self-hosted in `site/vendor/`, loaded only on click). Controls: prev/next, page count, slideshow
+(3.5 s, loops), full screen, X to close (Esc too); two-page spread when wide, one page on phones; rebuilt on resize.
+View-only: `GET /api/brochure/:id` answers only with header `X-Brochure-View: 1` and sends the bytes XOR-scrambled
+with a one-time key (`X-Brochure-Key`), `no-store`; right-click, drag, copy, Ctrl/Cmd+S/P and printing are blocked
+on the viewer. This deters casual saving only — anyone viewing can still screenshot. Admin view (real PDF):
+`GET /adminvr/properties/:id/brochure`.
 
 ## 7. Routes
 

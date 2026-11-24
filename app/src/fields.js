@@ -59,11 +59,13 @@ const VILLAS_COMMON = [
 // Project-level details, added at the end of every type's highlights
 // (the first four filled highlights stay the stat tiles on the property page).
 const PROJECT = [
+  t('project_name', 'Project Name', { placeholder: 'Brigade El Dorado' }),
   t('project_area', 'Project Area', { placeholder: '10 acres' }),
   t('total_towers', 'Total Towers'),
   t('total_units', 'Total Units'),
   t('unit_types', 'Unit Type', { placeholder: '2, 3 & 4 BHK' }),   // key kept from when it was "Unit Types"
   t('tower_block', 'Tower / Block', { placeholder: 'Tower B' }),
+  s('registration_status', 'Registration Status', ['Registered', 'Unregistered']),
   t('address', 'Address'),
   t('landmark', 'Landmark'),
   t('project_scale', 'Project Scale'),

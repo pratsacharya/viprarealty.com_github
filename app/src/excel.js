@@ -218,6 +218,7 @@ async function importWorkbook(buffer, userId) {
     const defs = columnsFor(sub.name);
     const byHeader = Object.fromEntries(defs.map((d) => [d.header.toLowerCase(), d]));
     byHeader['possession date'] = { kind: 'possession_old' };   // older files: one column for both types
+    if (byHeader['unit type'] && !byHeader['unit types']) byHeader['unit types'] = byHeader['unit type'];   // older files: label was "Unit Types"
     const colMap = [];                      // column index -> def
     ws.getRow(1).eachCell((cell, i) => { const d = byHeader[cellText(cell).toLowerCase()]; if (d) colMap[i] = d; });
     if (!colMap.some((d) => d && d.kind === 'project_title')) {

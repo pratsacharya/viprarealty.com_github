@@ -62,7 +62,8 @@ const PROJECT = [
   t('project_area', 'Project Area', { placeholder: '10 acres' }),
   t('total_towers', 'Total Towers'),
   t('total_units', 'Total Units'),
-  t('unit_types', 'Unit Types', { placeholder: '2, 3 & 4 BHK' }),
+  t('unit_types', 'Unit Type', { placeholder: '2, 3 & 4 BHK' }),   // key kept from when it was "Unit Types"
+  t('tower_block', 'Tower / Block', { placeholder: 'Tower B' }),
   t('address', 'Address'),
   t('landmark', 'Landmark'),
   t('project_scale', 'Project Scale'),

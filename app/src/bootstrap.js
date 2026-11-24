@@ -155,6 +155,8 @@ async function ensureBrokerageLabelColumns() {
     brokerage: 'VARCHAR(80) NULL AFTER possession_date', image_label: 'VARCHAR(40) NULL AFTER brokerage',
     // project brochure PDF: the link it came from + the stored file (src/brochures.js)
     brochure_url: 'VARCHAR(500) NULL AFTER image_label', brochure_file: 'VARCHAR(120) NULL AFTER brochure_url',
+    // Rent: "Available from" (Buy keeps possession_date, shown as "Expected possession")
+    available_from: 'VARCHAR(40) NULL AFTER possession_date',
   };
   for (const [col, def] of Object.entries(add)) {
     const [[{ n }]] = await pool.query(
@@ -162,6 +164,11 @@ async function ensureBrokerageLabelColumns() {
         "WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='properties' AND COLUMN_NAME=?", [col]);
     if (n === 0) await pool.query(`ALTER TABLE properties ADD COLUMN ${col} ${def}`);
   }
+  // Rent listings used "Possession date" before "Available from" existed: move it across once.
+  await pool.query(
+    `UPDATE properties SET available_from=possession_date, possession_date=NULL
+     WHERE search_type='Rent' AND possession_date IS NOT NULL AND possession_date<>''
+       AND (available_from IS NULL OR available_from='')`);
 }
 
 // Excel import downloads linked photos into the uploads folder; source_url keeps

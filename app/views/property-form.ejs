@@ -41,7 +41,8 @@
       <label data-for="Rent">Deposit (₹)<input name="deposit_amount" value="<%= v('deposit_amount') %>"></label>
       <label data-for="Rent">Maintenance<input name="maintenance" value="<%= v('maintenance') %>" maxlength="80" placeholder="5000 or Included"></label>
       <label>Brokerage<input name="brokerage" value="<%= v('brokerage') %>" maxlength="80" placeholder="1 month rent, 2%, 50000 or Nil"></label>
-      <label>Possession date<input name="possession_date" value="<%= v('possession_date') %>" placeholder="DD-MM-YYYY or Immediate"></label>
+      <label data-for="Buy">Expected possession<input name="possession_date" value="<%= v('possession_date') %>" maxlength="40" placeholder="DD-MM-YYYY or Ready to move"></label>
+      <label data-for="Rent">Available from<input name="available_from" value="<%= v('available_from') %>" maxlength="40" placeholder="DD-MM-YYYY or Immediate"></label>
       <label>Label on photo<input name="image_label" value="<%= v('image_label') %>" maxlength="40" placeholder="Blank = For sale / For rent"></label>
     </div>
   </details>

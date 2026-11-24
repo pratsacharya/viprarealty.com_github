@@ -173,7 +173,7 @@ router.get('/properties/:id/images/prune', requireMaster, checkCsrf, async (req,
 // ---------- add / edit ----------
 const PROP_FIELDS = ['project_title', 'description', 'search_type',
   'category_id', 'sub_category_id', 'city', 'locality', 'sale_price', 'monthly_rent', 'deposit_amount', 'maintenance', 'down_payment', 'stamp_duty',
-  'possession_date', 'brokerage', 'image_label', 'bedrooms', 'bathrooms', 'carpet_area', 'builtup_area', 'total_floors', 'floor_no',
+  'possession_date', 'available_from', 'brokerage', 'image_label', 'bedrooms', 'bathrooms', 'carpet_area', 'builtup_area', 'total_floors', 'floor_no',
   'ceiling_height', 'status', 'featured'];
 
 async function loadFormData() {
@@ -264,7 +264,8 @@ router.post('/property-edit', photoUpload, async (req, res) => {
     sale_price: num('sale_price'), monthly_rent: num('monthly_rent'), deposit_amount: num('deposit_amount'),
     maintenance: str('maintenance').slice(0, 80) || null,
     stamp_duty: str('stamp_duty').slice(0, 80) || null,
-    down_payment: num('down_payment'), possession_date: str('possession_date'),
+    down_payment: num('down_payment'), possession_date: str('possession_date').slice(0, 40) || null,
+    available_from: str('available_from').slice(0, 40) || null,
     brokerage: str('brokerage').slice(0, 80) || null,
     image_label: str('image_label').slice(0, 40) || null,
     status: ['active', 'inactive', 'sold_out', 'rented_out'].includes(str('status')) ? str('status') : 'active',
@@ -272,8 +273,8 @@ router.post('/property-edit', photoUpload, async (req, res) => {
   };
 
   // only the price fields of the chosen search type are kept
-  if (data.search_type === 'Rent') { data.sale_price = null; data.down_payment = null; data.stamp_duty = null; }
-  else { data.monthly_rent = null; data.deposit_amount = null; data.maintenance = null; }
+  if (data.search_type === 'Rent') { data.sale_price = null; data.down_payment = null; data.stamp_duty = null; data.possession_date = null; }
+  else { data.monthly_rent = null; data.deposit_amount = null; data.maintenance = null; data.available_from = null; }
 
   // extra fields for this listing's type; the old spec columns follow the highlights
   const [[subRow]] = await pool.query('SELECT name FROM sub_categories WHERE id=?', [data.sub_category_id || 0]);

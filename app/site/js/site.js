@@ -424,7 +424,7 @@
         ['Looking to', l.search_type],
         ['Property type', l.sub_category],
         ['Locality', l.locality], ['City', l.city],
-        ['Possession', l.possession_date],
+        l.search_type === 'Buy' ? ['Expected possession', l.possession_date] : ['Available from', l.available_from],
         ['Down payment', l.down_payment ? inr(l.down_payment) : ''],
         ['Status', (l.status || '').replace('_', ' ')],
       ].filter(function (r) { return r[1] != null && r[1] !== ''; }).map(function (r) {
